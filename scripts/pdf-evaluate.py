@@ -37,6 +37,10 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
     unjudged_table_candidates = 0
     fully_labeled_table_documents = 0
     documents = []
+    labeled_pages_total = 0
+    original_pages_total = 0
+    blank_pages_correct = 0
+    hallucinated_blank_pages = 0
     for item in docs:
         if not isinstance(item, dict):
             raise ValueError("document entry must be an object")
@@ -54,16 +58,30 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
         if result.metadata["document_truncated"]:
             raise ValueError(f"truncated document cannot be scored: {pdf_path.name}")
         pages = {page["page"]: page for page in result.metadata["document_pages"]}
+        original_pages_total += result.metadata["document_page_count"]
         page_metrics = []
+        labeled = set()
         for gold in item.get("pages", []):
             number, expected = gold["page"], gold["expected_text"]
             if number not in pages:
                 raise ValueError(f"missing evaluated page {number} in {pdf_path.name}")
+            if number in labeled:
+                raise ValueError(f"duplicate labeled page {number} in {pdf_path.name}")
+            labeled.add(number)
             record = pages[number]
             observed = result.text_content[record["char_start"]:record["char_end"]]
+            if not expected.strip():
+                # Blank-page truth has no CER denominator; detect OCR hallucination.
+                hallucinated = bool(observed.strip())
+                hallucinated_blank_pages += int(hallucinated)
+                blank_pages_correct += int(not hallucinated)
+                page_metrics.append({"page": number, "blank_page": True,
+                                     "unexpected_text": hallucinated})
+                continue
             score = text_error_counts(expected, observed)
             text_samples.append(score)
             page_metrics.append({"page": number, **score})
+        labeled_pages_total += len(labeled)
         tables_by_page: dict[int, list[dict]] = {}
         for row in result.metadata["document_table_candidates"]:
             tables_by_page.setdefault(row["page"], []).append(row)
@@ -108,17 +126,25 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
             "id": item["id"],
             "pages_total": result.metadata["document_page_count"],
             "pages_scored": len(page_metrics),
+            "document_sha256": result.metadata["document_sha256"],
             "ocr_pages": result.metadata["ocr_page_count"],
             "warnings": list(result.warnings),
             "text_page_counts": page_metrics,
         })
-    if not (text_samples or table_samples or citations):
+    if not (labeled_pages_total or table_samples or citations):
         raise ValueError("no independently labeled text, table, or citation cases")
     return {
         "dataset_name": manifest.get("dataset_name", manifest_path.stem),
         "dataset_type": dataset_type,
         "not_a_real_world_benchmark": dataset_type == "synthetic",
         "documents_evaluated": len(documents),
+        "labeling": {
+            "labeled_pages": labeled_pages_total,
+            "original_pages": original_pages_total,
+            "labeled_page_coverage": labeled_pages_total / original_pages_total,
+            "blank_pages_correct": blank_pages_correct,
+            "hallucinated_blank_pages": hallucinated_blank_pages,
+        },
         "text": aggregate_text_counts(text_samples) if text_samples else None,
         "tables": {
             **(aggregate_table_counts(table_samples) if table_samples else {}),
@@ -147,6 +173,8 @@ def main() -> int:
     parser.add_argument("--min-citation-precision", type=float)
     parser.add_argument("--max-wrong-citations", type=int)
     parser.add_argument("--max-false-table-candidates", type=int)
+    parser.add_argument("--min-labeled-page-coverage", type=float)
+    parser.add_argument("--max-hallucinated-blank-pages", type=int)
     args = parser.parse_args()
     report = evaluate_manifest(args.manifest.resolve())
     checks: list[dict[str, object]] = []
@@ -157,6 +185,8 @@ def main() -> int:
         ("citation_precision", "citations", args.min_citation_precision, "min"),
         ("wrong", "citations", args.max_wrong_citations, "max"),
         ("false_table_candidates", "tables", args.max_false_table_candidates, "max"),
+        ("labeled_page_coverage", "labeling", args.min_labeled_page_coverage, "min"),
+        ("hallucinated_blank_pages", "labeling", args.max_hallucinated_blank_pages, "max"),
     )
     for key, group, threshold, direction in gates:
         if threshold is None:
