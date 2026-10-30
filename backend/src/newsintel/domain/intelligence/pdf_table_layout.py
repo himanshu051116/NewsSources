@@ -45,7 +45,14 @@ def detect_table_candidates(
         })
         block.clear()
 
+    blank_run = 0
     for index, line in enumerate(layout_text.splitlines(), 1):
+        if not line.strip():
+            blank_run += 1
+            if blank_run > 1:
+                finish()
+            continue
+        blank_run = 0
         parts = [s.strip() for s in re.split(r" {2,}", line.strip()) if s.strip()]
         if not (3 <= len(parts) <= max_columns):
             finish()
