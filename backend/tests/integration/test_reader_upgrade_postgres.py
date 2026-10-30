@@ -152,7 +152,7 @@ async def _requeue_for_revision(factory, candidate_id):
 @pytest.mark.asyncio
 async def test_headline_only_article_correction_creates_chronological_revision(persistence):
     factory, candidate_id, _ = persistence
-    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    published_at = datetime.now(UTC) - timedelta(days=1)
     body = "The regulator said interest rates would remain unchanged."
     first = await ingest(factory, body, "d", title="Rates cut", published_at=published_at)
     await _requeue_for_revision(factory, candidate_id)
@@ -177,7 +177,7 @@ async def test_headline_only_article_correction_creates_chronological_revision(p
 @pytest.mark.asyncio
 async def test_revision_history_keeps_a_to_b_to_a_body_reversion(persistence):
     factory, candidate_id, _ = persistence
-    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    published_at = datetime.now(UTC) - timedelta(days=1)
     old = "The regulator said 30 branches will remain open."
     new = "The regulator said 20 branches will remain open."
     first = await ingest(factory, old, "e", published_at=published_at)
@@ -202,7 +202,7 @@ async def test_revision_history_keeps_a_to_b_to_a_body_reversion(persistence):
 @pytest.mark.asyncio
 async def test_unchanged_recrawl_reuses_current_version_without_extra_rows(persistence):
     factory, candidate_id, _ = persistence
-    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    published_at = datetime.now(UTC) - timedelta(days=1)
     text = "The regulator issued its quarterly financial update."
     first = await ingest(factory, text, "a", published_at=published_at)
     await _requeue_for_revision(factory, candidate_id)
