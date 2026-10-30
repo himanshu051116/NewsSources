@@ -37,6 +37,7 @@ from newsintel.domain.events.matching import (
     provisional_event_features,
     top_terms,
 )
+from newsintel.domain.intelligence.document_provenance import locate_pdf_source_sentence
 from newsintel.domain.intelligence.claims import (
     CLAIM_EXTRACTOR_VERSION,
     ClaimVerificationLabel,
@@ -929,6 +930,14 @@ def _persist_claims_for_version(
     claim_ids: list[UUID] = []
     for claim in extract_claims(version.text_content):
         claim_id = uuid7()
+        provenance = locate_pdf_source_sentence(
+            version.text_content,
+            version.metadata_.get("document_pages"),
+            claim.source_sentence,
+        )
+        features = dict(claim.features)
+        if provenance is not None:
+            features["document_provenance"] = provenance
         session.add(
             ArticleClaimModel(
                 id=claim_id,
@@ -938,7 +947,7 @@ def _persist_claims_for_version(
                 claim_sha256=claim.claim_sha256,
                 sentence_index=claim.sentence_index,
                 extractor_version=CLAIM_EXTRACTOR_VERSION,
-                extraction_features=claim.features,
+                extraction_features=features,
                 created_at=created_at,
             )
         )
@@ -966,6 +975,7 @@ def _persist_claims_for_version(
                     "sentence_index": claim.sentence_index,
                     "clause_index": claim.clause_index,
                     "source_sentence": claim.source_sentence,
+                    **({"document_provenance": provenance} if provenance else {}),
                     "claim_type": claim.features.get("claim_type"),
                     "claim_family_key": claim.features.get("claim_family_key"),
                 },
