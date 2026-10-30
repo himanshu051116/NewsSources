@@ -29,21 +29,19 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      # Temporary unlocked public-PyPI install until uv.lock is regenerated without
-      # private workstation indexes. Do not treat this as a reproducible lock.
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Install public dependencies without the broken uv.lock
+      - name: Install reproducible locked dependencies from public PyPI
         env:
           UV_DEFAULT_INDEX: https://pypi.org/simple
-        run: uv pip install --system -e '.[dev,extractors]'
+        run: uv sync --all-extras --locked
       # Existing repository has >1,200 full Ruff diagnostics (chiefly E501).
       # Keep fatal syntax/undefined-name checks gating CI; track style cleanup separately.
       - name: Critical syntax and undefined-name lint
         run: ruff check --select E9,F821,F822,F823 backend/src backend/tests scripts
-      - run: python -m compileall -q backend/src backend/tests backend/migrations
-      - run: alembic -c backend/alembic.ini upgrade head
-      - run: pytest -q
-      - run: python scripts/release-integrity.py
+      - run: uv run python -m compileall -q backend/src backend/tests backend/migrations
+      - run: uv run alembic -c backend/alembic.ini upgrade head
+      - run: uv run pytest -q
+      - run: uv run python scripts/release-integrity.py
       - run: docker build -t news-intelligence:${{ github.sha }} .

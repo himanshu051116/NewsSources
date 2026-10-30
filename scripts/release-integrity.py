@@ -41,6 +41,9 @@ def main() -> int:
     checks["lock_project_version"] = lock_project_version
     if lock_project_version != project_version:
         failures.append("uv.lock editable project version does not match pyproject")
+    checks["lock_uses_private_package_index"] = "packages.applied-caas-gateway" in lock_text
+    if checks["lock_uses_private_package_index"]:
+        failures.append("uv.lock references an unavailable private package index")
 
     schema_text = (ROOT / "backend/src/newsintel/core/schema.py").read_text(encoding="utf-8")
     schema_match = re.search(r'EXPECTED_SCHEMA_REVISION\s*=\s*["\']([^"\']+)["\']', schema_text)
