@@ -74,6 +74,19 @@ def test_table_cell_metrics_penalize_wrong_number_and_missing_row() -> None:
     assert report["cell_recall"] == 5 / 9
 
 
+
+def test_table_cell_metrics_reject_malformed_and_unbounded_inputs() -> None:
+    with pytest.raises(ValueError, match="table cells must contain text"):
+        table_cell_counts([["District", 23]], [["District", "23"]])
+    with pytest.raises(ValueError, match="table rows must be lists"):
+        table_cell_counts([["District"]], ["District"])
+    with pytest.raises(ValueError, match="exceeds 20000 cells"):
+        table_cell_counts([["value"]], [["value"] * 20001])
+    with pytest.raises(ValueError, match="exceeds 20000 cells"):
+        table_cell_counts([["value"] * 20001], [["value"]])
+    assert table_cell_counts([["भारत", "१२"]], [["भारत", "१२"]])["correct_cells"] == 2
+
+
 def test_citation_metrics_distinguish_false_anchor_and_correct_abstention() -> None:
     result = citation_counts([
         {"expected_page": 2, "predicted_page": 2},
