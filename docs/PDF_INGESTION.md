@@ -40,8 +40,17 @@ page number, a `#page=N` URL, start/end character offsets into the
 stored concatenated text, SHA-256 of page text, and extraction method.
 
 OCR page records explicitly say `ocr_unverified=true`; they must be
-human-reviewed before use as conclusive evidence. The pipeline does **not**
-automatically attach PDF page citations to every extracted claim yet.
+human-reviewed before use as conclusive evidence.
+
+Claims now also receive an optional `document_provenance` anchor in their
+extraction features and originating evidence metadata. The anchor is assigned
+only when the **original source sentence** matches exactly (allowing layout
+whitespace variation) on a single page whose text SHA-256 is valid. Duplicated
+sentences, unknown page offsets, and unmatched paraphrases receive **no
+automatic page attribution**. An anchor carries source URL, page number,
+character offsets, original page hash, OCR uncertainty, and
+`independent_confirmation=false`. It establishes where a claim was extracted,
+not whether the publisher's statement is true.
 
 ## Limits not yet solved
 
@@ -51,5 +60,5 @@ automatically attach PDF page citations to every extracted claim yet.
 - OCR confidence is not calibrated. It does not establish factual truth.
 - Historical archive backfill and user-upload PDFs need separate admission
   and permissions flows.
-- A page URL + text offset is provenance metadata, not a verified quotation or
-  automatic claim-level evidence link.
+- Page anchors in claim metadata are extraction provenance, not a verified
+  quotation or independent corroboration of the claim.
