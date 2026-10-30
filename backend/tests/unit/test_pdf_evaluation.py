@@ -15,6 +15,7 @@ from newsintel.domain.intelligence.pdf_evaluation import (
     citation_counts,
     table_cell_counts,
     text_error_counts,
+    edit_distance,
 )
 
 
@@ -178,3 +179,30 @@ def test_table_false_positive_gate_requires_complete_ground_truth(tmp_path) -> N
     report = json.loads(accepted.stdout)
     assert report["tables"]["false_table_candidates"] == 0
     assert report["tables"]["fully_labeled_table_documents"] == 1
+
+
+def test_exact_edit_distance_matches_reference_dp_on_small_unicode_strings() -> None:
+    from itertools import product
+
+    def baseline(a: str, b: str) -> int:
+        row = list(range(len(b) + 1))
+        for i, left in enumerate(a, 1):
+            nxt = [i]
+            for j, right in enumerate(b, 1):
+                nxt.append(min(nxt[-1] + 1, row[j] + 1, row[j-1] + (left != right)))
+            row = nxt
+        return row[-1]
+
+    samples = ["".join(x) for n in range(4) for x in product("भaइ", repeat=n)]
+    for a in samples:
+        for b in samples:
+            assert edit_distance(a, b) == baseline(a, b)
+    assert edit_distance(["भारत", "सरकार"], ["भारत", "योजना"]) == 1
+
+
+def test_bounded_full_page_edit_distance() -> None:
+    phrase = "भारत सरकार " * 800
+    changed = phrase[:400] + "X" + phrase[401:]
+    assert edit_distance(phrase, changed) == 1
+    with pytest.raises(ValueError, match="exceeds 20000"):
+        edit_distance("a" * 20001, "b" * 20001)

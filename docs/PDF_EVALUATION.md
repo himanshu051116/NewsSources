@@ -73,7 +73,10 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
 ## Metric definitions (not estimates)
 
 - **Character error rate (CER)**: Unicode NFC codepoint Levenshtein edits
-  divided by reference codepoints; not grapheme-cluster error rate.
+  divided by reference codepoints; not grapheme-cluster error rate. Exact
+  bit-vector distance replaces quadratic Python-row loops and rejects a
+  single comparison over 20,000 codepoints/tokens instead of allowing an
+  unbounded benchmark process.
 - **Word error rate (WER)**: whitespace-token edit count divided by reference
   tokens. Higher is worse; rates may exceed 100% with heavy insertions.
 - **Table-cell precision and recall**: positional exact matches of labeled

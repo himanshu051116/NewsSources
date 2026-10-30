@@ -5,28 +5,47 @@ are defined only relative to user-supplied, independently checked ground truth.
 """
 from __future__ import annotations
 
-import re
 import unicodedata
 from collections.abc import Sequence
-from typing import Any
+
+# Refuse unbounded metric work on malformed evaluation manifests.
+MAX_EVALUATION_UNITS = 20_000
 
 
 def normalize_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFC", value).split())
 
 
-def edit_distance(reference: Sequence[Any], hypothesis: Sequence[Any]) -> int:
-    previous = list(range(len(hypothesis) + 1))
-    for i, expected in enumerate(reference, start=1):
-        current = [i]
-        for j, predicted in enumerate(hypothesis, start=1):
-            current.append(min(
-                previous[j] + 1,
-                current[j - 1] + 1,
-                previous[j - 1] + (expected != predicted),
-            ))
-        previous = current
-    return previous[-1]
+def edit_distance(reference: Sequence[str], hypothesis: Sequence[str]) -> int:
+    """Exact Unicode/token Levenshtein distance via bit-vector updates."""
+    if max(len(reference), len(hypothesis)) > MAX_EVALUATION_UNITS:
+        raise ValueError("labeled text exceeds 20000 units; evaluate shorter page samples")
+    if len(reference) > len(hypothesis):
+        reference, hypothesis = hypothesis, reference
+    size = len(reference)
+    if size == 0:
+        return len(hypothesis)
+    masks: dict[str, int] = {}
+    for index, token in enumerate(reference):
+        masks[token] = masks.get(token, 0) | (1 << index)
+    positive, negative = ~0, 0
+    distance = size
+    high_bit = 1 << (size - 1)
+    for token in hypothesis:
+        equal = masks.get(token, 0)
+        x = equal | negative
+        horizontal = (((equal & positive) + positive) ^ positive) | equal
+        positive_delta = negative | ~(horizontal | positive)
+        negative_delta = positive & horizontal
+        if positive_delta & high_bit:
+            distance += 1
+        elif negative_delta & high_bit:
+            distance -= 1
+        positive_delta = (positive_delta << 1) | 1
+        negative_delta <<= 1
+        positive = negative_delta | ~(x | positive_delta)
+        negative = positive_delta & x
+    return distance
 
 
 def text_error_counts(reference: str, hypothesis: str) -> dict[str, int | float]:
