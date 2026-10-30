@@ -120,7 +120,10 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
 - Test inaccessible/slow/multi-column PDFs, failed native extraction,
   malformed streams, low-resolution screenshots, large reports, rotated scans
   and permission-protected documents; review failure logging and retries.
-- Verify citations rendered in the actual newsroom UI, including
-  reviewer-visible uncertainty labels, before any production claims.
+- The article intelligence source tab now presents page links, extraction
+  warnings, OCR review labels and review-only table candidates. Analyst claim
+  cards include an originating PDF page link when a unique anchor exists.
+  Check these in a real browser with reviewer access, including mobile
+  layout, inaccessible source URLs and keyboard navigation, before release.
 - Review both stacked PRs before merging. The merge/deployment decision is
   intentionally separate from this evaluation task.
