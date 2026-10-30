@@ -41,3 +41,19 @@ async def test_raw_snapshot_supports_deep_windows_storage_paths(tmp_path) -> Non
     assert len(str(target)) > 260
     assert Path("\\\\?\\" + os.path.abspath(target)).read_bytes() == b"snapshot"
     assert artifact.byte_size == 8
+
+
+@pytest.mark.asyncio
+async def test_local_pdf_artifact_retains_original_pdf_bytes(tmp_path) -> None:
+    body = b"%PDF-1.4\n%%EOF\n"
+    digest = "c" * 64
+    artifact = await LocalRawArtifactStore(tmp_path).save_raw_pdf(
+        candidate_id=uuid7(),
+        body=body,
+        body_sha256=digest,
+        retrieved_at=datetime(2026, 10, 30, tzinfo=UTC),
+    )
+    assert artifact.storage_backend == "local_filesystem"
+    assert artifact.artifact_uri.endswith(f"{digest}.pdf")
+    stored_path = Path(artifact.artifact_uri.removeprefix("file://"))
+    assert stored_path.read_bytes() == body
