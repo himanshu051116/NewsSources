@@ -41,6 +41,10 @@ jobs:
       - name: Critical syntax and undefined-name lint
         run: uv run ruff check --select E9,F821,F822,F823 backend/src backend/tests scripts
       - run: uv run python -m compileall -q backend/src backend/tests backend/migrations
+      - name: Install PDF extraction tools for Linux tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils tesseract-ocr
       - run: uv run alembic -c backend/alembic.ini upgrade head
       - name: Create dedicated PostgreSQL integration test database
         run: |

@@ -96,3 +96,25 @@ async def test_s3_distinct_candidate_ids_preserve_both_snapshots() -> None:
     assert client.get_object(
         Bucket=bucket, Key=two.artifact_uri.removeprefix(f"s3://{bucket}/")
     )["Body"].read() == body
+
+
+@pytest.mark.asyncio
+async def test_s3_pdf_snapshot_uses_pdf_suffix_and_mime_type() -> None:
+    client = _client()
+    bucket = f"newsintel-pdf-{uuid4().hex[:16]}"
+    client.create_bucket(Bucket=bucket)
+    store = S3RawArtifactStore(
+        endpoint_url=str(ENDPOINT), bucket=bucket,
+        access_key="test", secret_key="test", prefix="raw-html",
+    )
+    body = b"%PDF-1.4\n%%EOF\n"
+    result = await store.save_raw_pdf(
+        candidate_id=uuid4(), body=body,
+        body_sha256=hashlib.sha256(body).hexdigest(),
+        retrieved_at=datetime(2026, 10, 30, tzinfo=UTC),
+    )
+    assert result.artifact_uri.endswith(".pdf")
+    key = result.artifact_uri.removeprefix(f"s3://{bucket}/")
+    response = client.get_object(Bucket=bucket, Key=key)
+    assert response["ContentType"] == "application/pdf"
+    assert response["Body"].read() == body

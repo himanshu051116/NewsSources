@@ -23,6 +23,9 @@ class ArticleVersionView(BaseModel):
     extraction_fidelity_discrepancies: list[str] = Field(default_factory=list)
     browser_rendered: bool = False
     raw_artifact_uri: str | None
+    document_pages: list[dict[str, object]] = Field(default_factory=list)
+    document_page_count: int | None = None
+    document_truncated: bool = False
     word_count: int
     text_content: str
     created_at: datetime
