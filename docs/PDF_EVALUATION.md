@@ -94,6 +94,10 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
 - Source freshness/admission, robots policy, SSRF guards and byte cap are
   inherited from the crawler. PDF extraction does not perform independent
   network access.
+- Raw artifact bytes are independently SHA-256 checked before storage.
+  Local hard links and conditional S3 `If-None-Match` prevent duplicate-key
+  overwrites, and a collided S3 object is byte-checked rather than trusted.
+  Unsupported S3 conditional writes fail closed.
 - Poppler and Tesseract subprocess timeouts; cumulative PDF-processing
   deadline; per-page output budget; page count and OCR attempt budgets;
   document text-character budget; raw snapshot immutability.

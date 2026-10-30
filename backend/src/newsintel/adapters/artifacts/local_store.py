@@ -5,6 +5,7 @@ import asyncio
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -48,6 +49,8 @@ class LocalRawArtifactStore:
     ) -> RawFetchArtifact:
         if len(body_sha256) != 64 or any(c not in "0123456789abcdef" for c in body_sha256):
             raise ValueError("body_sha256 must be a lowercase SHA-256 hex digest")
+        if sha256(body).hexdigest() != body_sha256:
+            raise ValueError("body_sha256 does not match raw artifact bytes")
         destination = (
             self._root / retrieved_at.strftime("%Y/%m/%d")
             / str(candidate_id) / f"{body_sha256}{suffix}"

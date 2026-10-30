@@ -63,11 +63,18 @@ async def test_s3_round_trip_retains_original_raw_html() -> None:
     # the original raw snapshot.
     repeated = await store.save_raw_html(
         candidate_id=candidate_id,
-        body=b"mutated body that should not replace original",
+        body=body,
         body_sha256=digest,
         retrieved_at=time,
     )
     assert repeated.artifact_uri == first.artifact_uri
+    with pytest.raises(ValueError, match="does not match"):
+        await store.save_raw_html(
+            candidate_id=candidate_id,
+            body=b"mutated body that should not replace original",
+            body_sha256=digest,
+            retrieved_at=time,
+        )
     assert client.get_object(Bucket=bucket, Key=key)["Body"].read() == body
 
 
@@ -118,3 +125,29 @@ async def test_s3_pdf_snapshot_uses_pdf_suffix_and_mime_type() -> None:
     response = client.get_object(Bucket=bucket, Key=key)
     assert response["ContentType"] == "application/pdf"
     assert response["Body"].read() == body
+
+
+@pytest.mark.asyncio
+async def test_s3_conditional_put_rejects_existing_key_with_different_bytes() -> None:
+    client = _client()
+    bucket = f"newsintel-audit-{uuid4().hex[:16]}"
+    client.create_bucket(Bucket=bucket)
+    store = S3RawArtifactStore(
+        endpoint_url=str(ENDPOINT), bucket=bucket,
+        access_key="test", secret_key="test", prefix="raw-html",
+    )
+    body = b"%PDF-1.4\\noriginal\\n"
+    digest = hashlib.sha256(body).hexdigest()
+    candidate_id = uuid4()
+    time = datetime(2026, 10, 30, tzinfo=UTC)
+    key = f"raw-html/2026/10/30/{candidate_id}/{digest}.pdf"
+    client.put_object(
+        Bucket=bucket, Key=key, Body=b"corrupted external snapshot",
+        ContentType="application/pdf",
+    )
+    with pytest.raises(FileExistsError, match="different bytes"):
+        await store.save_raw_pdf(
+            candidate_id=candidate_id, body=body, body_sha256=digest,
+            retrieved_at=time,
+        )
+    assert client.get_object(Bucket=bucket, Key=key)["Body"].read() == b"corrupted external snapshot"
