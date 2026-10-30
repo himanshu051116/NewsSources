@@ -23,7 +23,7 @@ ROUTES = SRC / "api" / "routes"
 
 def test_v120_release_contract_and_indexes() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert "ix_article_versions_search_english_fts" in REQUIRED_V20_INDEXES
     assert "ix_article_claims_search_english_fts" in REQUIRED_V20_INDEXES
     assert "ix_events_search_english_fts" in REQUIRED_V20_INDEXES

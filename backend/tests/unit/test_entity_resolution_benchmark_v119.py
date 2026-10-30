@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_v119_release_contract() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert "entity_resolution_candidates" in REQUIRED_V19_TABLES
     assert "entity_resolution_actions" in REQUIRED_V19_TABLES
     assert "ix_canonical_entities_resolution_status" in REQUIRED_V19_INDEXES

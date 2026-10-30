@@ -18,7 +18,7 @@ from newsintel.core.schema import (
 
 def test_browser_recompute_release_contract() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert "derived_artifact_dependencies" in REQUIRED_V15_TABLES
     assert "derived_artifact_states" in REQUIRED_V15_TABLES
     assert "derived_recompute_jobs" in REQUIRED_V15_TABLES
