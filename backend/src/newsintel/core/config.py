@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     fetch_max_bytes: int = Field(default=8_000_000, ge=1024, le=50_000_000)
     pdf_max_pages: int = Field(default=40, ge=1, le=100)
     pdf_ocr_enabled: bool = False
-    pdf_ocr_language: str = "eng"
+    pdf_ocr_language: str = "eng+hin"
     pdf_max_ocr_pages: int = Field(default=6, ge=0, le=40)
     pdf_processing_timeout_seconds: int = Field(default=75, ge=10, le=110)
     browser_renderer_enabled: bool = False

@@ -26,8 +26,9 @@ Failed and missing OCR tools do not silently invent document text.
   The original page count and truncation warning are preserved.
 - `NEWSINTEL_PDF_OCR_ENABLED=false` — OCR **off** by default. Set to
   `true` only if scanned PDF extraction is intentionally required.
-- `NEWSINTEL_PDF_OCR_LANGUAGE=eng` — Tesseract language codes; use
-  `eng+hin` when both OCR language packs are installed.
+- `NEWSINTEL_PDF_OCR_LANGUAGE=eng+hin` — when OCR is intentionally enabled,
+  use both English and Hindi recognition on the provided Docker image; set
+  `eng` on hosts without the Hindi model. OCR remains disabled by default.
 - `NEWSINTEL_FETCH_MAX_BYTES=8000000` — shared HTTP byte cap; PDF
   extraction also enforces this size.
 - `NEWSINTEL_PDF_MAX_OCR_PAGES=6` — OCR at most six pages per document;

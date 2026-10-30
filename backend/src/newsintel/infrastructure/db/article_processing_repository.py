@@ -934,6 +934,7 @@ def _persist_claims_for_version(
             version.text_content,
             version.metadata_.get("document_pages"),
             claim.source_sentence,
+            expected_source_url=version.final_url,
         )
         features = dict(claim.features)
         if provenance is not None:

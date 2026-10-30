@@ -14,6 +14,8 @@ def locate_pdf_source_sentence(
     document_text: str,
     page_records: object,
     source_sentence: str | None,
+    *,
+    expected_source_url: str | None = None,
 ) -> dict[str, Any] | None:
     """Locate one unambiguous sentence span within a single verified page.
 
@@ -26,6 +28,8 @@ def locate_pdf_source_sentence(
     normalized = " ".join(source_sentence.split())
     if len(normalized) < 12 or len(normalized) > 2_000:
         return None
+    # If a trusted origin is supplied, reject stale or poisoned metadata URLs.
+    expected_base = expected_source_url.split("#", 1)[0] if expected_source_url else None
     # Admit layout whitespace differences, but no substitutions or paraphrases.
     expression = re.compile(re.escape(normalized).replace(r"\ ", r"\s+"))
     matches: list[dict[str, Any]] = []
@@ -46,6 +50,7 @@ def locate_pdf_source_sentence(
             or page < 1
             or not isinstance(url, str)
             or not url.endswith(f"#page={page}")
+            or (expected_base is not None and url != f"{expected_base}#page={page}")
             or not isinstance(digest, str)
             or len(digest) != 64
         ):

@@ -68,3 +68,16 @@ def test_ocr_anchor_remains_explicitly_unverified() -> None:
     assert hit is not None
     assert hit["ocr_unverified"] is True
     assert hit["independent_confirmation"] is False
+
+
+def test_rejects_page_url_from_other_document_even_when_checksum_matches() -> None:
+    text = "Officials reported 35 registered incidents in April."
+    record = _page(text, 1, 0)
+    assert locate_pdf_source_sentence(
+        text, [record], text,
+        expected_source_url="https://example.org/another-report.pdf",
+    ) is None
+    assert locate_pdf_source_sentence(
+        text, [record], text,
+        expected_source_url="https://example.org/report.pdf",
+    ) is not None

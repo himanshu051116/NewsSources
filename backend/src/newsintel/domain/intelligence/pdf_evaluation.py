@@ -71,7 +71,7 @@ def citation_counts(cases: list[dict[str, object]]) -> dict[str, int | float]:
     """Ground truth is a page ID, or None when the correct action is abstention."""
     if not cases:
         raise ValueError("citation evaluation requires labeled cases")
-    correct = wrong = abstained = expected_anchors = 0
+    correct = wrong = abstained = expected_anchors = correct_abstentions = missed = 0
     for case in cases:
         expected = case["expected_page"]
         predicted = case["predicted_page"]
@@ -83,6 +83,10 @@ def citation_counts(cases: list[dict[str, object]]) -> dict[str, int | float]:
             raise ValueError("invalid predicted citation page")
         if predicted is None:
             abstained += 1
+            if expected is None:
+                correct_abstentions += 1
+            else:
+                missed += 1
         elif predicted == expected:
             correct += 1
         else:
@@ -93,6 +97,8 @@ def citation_counts(cases: list[dict[str, object]]) -> dict[str, int | float]:
         "wrong": wrong,
         "abstained": abstained,
         "expected_anchors": expected_anchors,
+        "correct_abstentions": correct_abstentions,
+        "missed_anchors": missed,
         "citation_precision": correct / proposed if proposed else 0.0,
         "citation_recall": correct / expected_anchors if expected_anchors else 0.0,
         "abstention_rate": abstained / len(cases),

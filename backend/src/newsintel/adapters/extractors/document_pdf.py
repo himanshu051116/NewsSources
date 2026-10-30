@@ -14,7 +14,7 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, urldefrag, urlsplit
 
 from newsintel.adapters.extractors.article_html import ExtractedArticle
 from newsintel.domain.intelligence.pdf_table_layout import detect_table_candidates
@@ -106,6 +106,7 @@ def extract_pdf_document(
     retain these offsets when citing a passage; a string match alone is not
     sufficient page-level evidence.
     """
+    base_url = urldefrag(base_url).url
     if not body.startswith(b"%PDF-"):
         raise PDFExtractionError("PDF content signature missing")
     if len(body) > max_bytes:
