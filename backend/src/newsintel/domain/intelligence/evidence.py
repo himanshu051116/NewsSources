@@ -137,7 +137,7 @@ def _lexical_overlap(left: str, right: str) -> float:
 def _tokens(text: str) -> set[str]:
     return {
         token
-        for token in re.findall(r"[a-z0-9]+", text.lower())
+        for token in re.findall(r"[^\W_][\w\u0300-\u036F\u0900-\u097F]*", text.casefold())
         if len(token) > 2 and token not in _STOPWORDS
     }
 

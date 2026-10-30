@@ -99,14 +99,18 @@ class RobotsPolicy:
 
     def _rules_for_user_agent(self, user_agent: str) -> tuple[RobotsRule, ...]:
         token = _product_token(user_agent)
-        specific: list[RobotsRule] = []
+        matches: list[tuple[int, tuple[RobotsRule, ...]]] = []
         wildcard: list[RobotsRule] = []
         for agents, rules in self.groups:
-            if any(agent != "*" and _agent_matches(agent, token) for agent in agents):
-                specific.extend(rules)
+            widths = [len(agent) for agent in agents if agent != "*" and _agent_matches(agent, token)]
+            if widths:
+                matches.append((max(widths), rules))
             elif "*" in agents:
                 wildcard.extend(rules)
-        return tuple(specific if specific else wildcard)
+        if matches:
+            longest = max(width for width, _rules in matches)
+            return tuple(rule for width, rules in matches if width == longest for rule in rules)
+        return tuple(wildcard)
 
 
 @dataclass(frozen=True, slots=True)
