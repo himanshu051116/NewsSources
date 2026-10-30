@@ -124,3 +124,20 @@ def test_cli_scores_labeled_local_pdf_and_never_promotes_synthetic_to_real(tmp_p
     assert result["citations"]["citation_precision"] == 1
     assert result["citations"]["correct_abstentions"] == 1
     assert result["documents_evaluated"] == 1
+    passing = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-character-error-rate", "0", "--min-citation-precision", "1",
+         "--max-wrong-citations", "0"],
+        capture_output=True, text=True, timeout=90, check=True,
+    )
+    assert json.loads(passing.stdout)["quality_gates"]["passed"] is True
+    bad_reference = json.loads(manifest.read_text(encoding="utf-8"))
+    bad_reference["documents"][0]["pages"][0]["expected_text"] += " Extra"
+    manifest.write_text(json.dumps(bad_reference), encoding="utf-8")
+    failing = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-character-error-rate", "0"],
+        capture_output=True, text=True, timeout=90, check=False,
+    )
+    assert failing.returncode == 1
+    assert json.loads(failing.stdout)["quality_gates"]["passed"] is False

@@ -120,13 +120,46 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, help="Write machine-readable JSON report")
+    parser.add_argument("--max-character-error-rate", type=float)
+    parser.add_argument("--max-word-error-rate", type=float)
+    parser.add_argument("--min-table-cell-recall", type=float)
+    parser.add_argument("--min-citation-precision", type=float)
+    parser.add_argument("--max-wrong-citations", type=int)
     args = parser.parse_args()
     report = evaluate_manifest(args.manifest.resolve())
+    checks: list[dict[str, object]] = []
+    gates = (
+        ("character_error_rate", "text", args.max_character_error_rate, "max"),
+        ("word_error_rate", "text", args.max_word_error_rate, "max"),
+        ("cell_recall", "tables", args.min_table_cell_recall, "min"),
+        ("citation_precision", "citations", args.min_citation_precision, "min"),
+        ("wrong", "citations", args.max_wrong_citations, "max"),
+    )
+    for key, group, threshold, direction in gates:
+        if threshold is None:
+            continue
+        if threshold < 0 or (direction == "min" and threshold > 1):
+            parser.error(f"invalid threshold for {key}")
+        data = report.get(group)
+        if not isinstance(data, dict) or key not in data:
+            parser.error(f"no labeled {group} samples to evaluate {key}")
+        value = float(data[key])
+        passed = value <= threshold if direction == "max" else value >= threshold
+        checks.append({
+            "metric": f"{group}.{key}",
+            "observed": value, "threshold": threshold,
+            "condition": direction, "passed": passed,
+        })
+    report["quality_gates"] = {
+        "applied": bool(checks),
+        "passed": all(c["passed"] for c in checks),
+        "checks": checks,
+    }
     payload = json.dumps(report, indent=2, ensure_ascii=False)
     if args.output:
         args.output.write_text(payload + "\n", encoding="utf-8")
     print(payload)
-    return 0
+    return 0 if report["quality_gates"]["passed"] else 1
 
 
 if __name__ == "__main__":

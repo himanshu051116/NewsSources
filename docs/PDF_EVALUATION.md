@@ -18,8 +18,13 @@ This document is the offline, reproducible QA procedure for
    --output /private/pdf-eval-results.json`. The output explicitly labels the
    dataset as `synthetic` or `manually_labeled_real`.
 5. Review each page's warnings and mismatched examples before interpreting
-   aggregate metrics. Do not merge until the representative newsroom sample
-   has been examined and the threshold decision is documented.
+   aggregate metrics. Optionally supply explicit quality gates, such as
+   `--max-character-error-rate 0.1 --min-citation-precision 0.99
+   --max-wrong-citations 0`; these are **illustrative choices**, not
+   empirically justified defaults. The CLI returns exit status 1 on a missed
+   gate and records observed values. It refuses a threshold for a metric
+   whose ground truth is missing. Do not merge until the representative
+   newsroom sample and chosen targets have been reviewed.
 
 ### Manifest example
 
