@@ -1,0 +1,41 @@
+{
+  "version": "2026-10-12",
+  "purpose": "Small launch pack for live-pipeline validation. Operators remain responsible for publisher terms, robots rules, licensing, and retention policy.",
+  "sources": [
+    {
+      "name": "Press Information Bureau - English",
+      "website_url": "https://www.pib.gov.in/",
+      "fetch_frequency": "every_15_minutes",
+      "manual_endpoints": ["https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1"],
+      "retention_guidance": "primary-authority"
+    },
+    {
+      "name": "Press Information Bureau - Hindi",
+      "website_url": "https://www.pib.gov.in/",
+      "fetch_frequency": "every_15_minutes",
+      "manual_endpoints": ["https://pib.gov.in/RssMain.aspx?ModId=6&Lang=2&Regid=3"],
+      "retention_guidance": "primary-authority"
+    },
+    {
+      "name": "The Guardian - World",
+      "website_url": "https://www.theguardian.com/world",
+      "fetch_frequency": "every_15_minutes",
+      "manual_endpoints": ["https://www.theguardian.com/world/rss"],
+      "retention_guidance": "review-publisher-terms"
+    },
+    {
+      "name": "The Guardian - Technology",
+      "website_url": "https://www.theguardian.com/technology",
+      "fetch_frequency": "every_15_minutes",
+      "manual_endpoints": ["https://www.theguardian.com/technology/rss"],
+      "retention_guidance": "review-publisher-terms"
+    },
+    {
+      "name": "SEBI - Press Releases",
+      "website_url": "https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=6&smid=0&ssid=23",
+      "fetch_frequency": "hourly",
+      "manual_endpoints": ["https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=6&smid=0&ssid=23"],
+      "retention_guidance": "primary-authority"
+    }
+  ]
+}

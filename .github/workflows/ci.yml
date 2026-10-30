@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_DB: newsintel
+          POSTGRES_USER: newsintel
+          POSTGRES_PASSWORD: newsintel-ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U newsintel -d newsintel"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      qdrant:
+        image: qdrant/qdrant:v1.13.2
+        ports: ["6333:6333"]
+    env:
+      NEWSINTEL_ENVIRONMENT: test
+      NEWSINTEL_DATABASE_URL: postgresql+asyncpg://newsintel:newsintel-ci@127.0.0.1:5432/newsintel
+      NEWSINTEL_QDRANT_URL: http://127.0.0.1:6333
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --all-extras
+      - run: uv run ruff check backend/src backend/tests scripts
+      - run: uv run python -m compileall -q backend/src backend/tests backend/migrations
+      - run: uv run alembic -c backend/alembic.ini upgrade head
+      - run: uv run pytest -q
+      - run: uv run python scripts/release-integrity.py
+      - run: docker build -t news-intelligence:${{ github.sha }} .

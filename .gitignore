@@ -1,0 +1,47 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+dist/
+build/
+
+.env
+.env.*
+!.env.example
+
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+data/
+artifacts/
+
+
+# Local secrets and runtime data
+.env
+.env.*
+!.env.example
+backups/
+.run/
+logs/
+openapi-current.json
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+acceptance-results/
+
+# Keep deployable configuration templates; real environment files stay ignored.
+!.env.production.example
+
+# Generated browser reports and screenshots.
+qa/results/
