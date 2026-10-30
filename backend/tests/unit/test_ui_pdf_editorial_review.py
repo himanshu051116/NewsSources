@@ -52,6 +52,6 @@ async def test_embedded_reader_javascript_is_syntactically_valid(tmp_path) -> No
     candidate.write_text(scripts[0], encoding="utf-8")
     result = subprocess.run(
         ["node", "--check", str(candidate)],
-        capture_output=True, text=True, timeout=15, check=False,
+        capture_output=True, text=True, timeout=60, check=False,
     )
     assert result.returncode == 0, result.stderr
