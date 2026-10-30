@@ -91,3 +91,48 @@ jobs:
         run: uv sync --all-extras --locked
       - name: Run Windows unit and long-path regression tests
         run: uv run pytest -q backend/tests/unit
+
+  s3-integration:
+    name: S3-compatible artifact persistence
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:2026.10.4
+        ports: ["4566:4566"]
+        env:
+          SERVICES: s3
+          AWS_DEFAULT_REGION: us-east-1
+    env:
+      NEWSINTEL_ENVIRONMENT: test
+      UV_DEFAULT_INDEX: https://pypi.org/simple
+      NEWSINTEL_TEST_S3_ENDPOINT: http://127.0.0.1:4566
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install locked dependencies
+        run: uv sync --all-extras --locked
+      - name: Wait for local S3 emulator
+        run: |
+          uv run python - <<'PY'
+          import time
+          from urllib.error import URLError
+          from urllib.request import urlopen
+
+          for attempt in range(40):
+              try:
+                  with urlopen("http://127.0.0.1:4566/_localstack/health", timeout=2) as response:
+                      if response.status == 200:
+                          break
+              except (OSError, URLError):
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("LocalStack S3 health endpoint unavailable")
+          PY
+      - name: Test raw object write, readback, and immutability
+        run: uv run pytest -q backend/tests/integration/test_artifact_storage_s3.py
