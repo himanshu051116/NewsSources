@@ -79,6 +79,16 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
   unbounded benchmark process.
 - **Word error rate (WER)**: whitespace-token edit count divided by reference
   tokens. Higher is worse; rates may exceed 100% with heavy insertions.
+- **Blank-page negative controls**: gold pages with no visible text have
+  no meaningful CER/WER denominator. Unexpected extracted text counts as
+  hallucinated blank-page content; a truly empty result is a correctly
+  captured empty page. Set `--max-hallucinated-blank-pages 0` when your
+  reviewed dataset includes such cases.
+- **Sampling coverage**: `labeled_page_coverage` is the fraction of all
+  original PDF pages independently annotated, including blank pages.
+  `--min-labeled-page-coverage` can reject cherry-picked samples. Every
+  document result includes the original PDF SHA-256 for reproducibility.
+  Repeated labels for the same document page are rejected.
 - **Table-cell precision and recall**: positional exact matches of labeled
   rows/columns against review-only table candidates. A candidate that is
   absent receives zero recall; guessed numbers do not count as matches.
