@@ -206,3 +206,61 @@ def test_bounded_full_page_edit_distance() -> None:
     assert edit_distance(phrase, changed) == 1
     with pytest.raises(ValueError, match="exceeds 20000"):
         edit_distance("a" * 20001, "b" * 20001)
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler tools absent")
+def test_blank_page_gold_counts_unexpected_text_and_source_hash(tmp_path) -> None:
+    pdf = tmp_path / "one.pdf"
+    pdf.write_bytes(_one_page_pdf("Visual report with printed text."))
+    manifest = tmp_path / "gold.json"
+    data = {"dataset_type": "synthetic", "documents": [{
+        "id": "blank-negative", "pdf_path": pdf.name,
+        "pages": [{"page": 1, "expected_text": ""}],
+    }]}
+    manifest.write_text(json.dumps(data), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-hallucinated-blank-pages", "0"],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert report["labeling"]["hallucinated_blank_pages"] == 1
+    assert report["labeling"]["labeled_page_coverage"] == 1.0
+    assert len(report["documents"][0]["document_sha256"]) == 64
+    data["documents"][0]["pages"].append({"page": 1, "expected_text": ""})
+    manifest.write_text(json.dumps(data), encoding="utf-8")
+    duplicate = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest)],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert duplicate.returncode != 0
+    assert "duplicate labeled page" in duplicate.stderr
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler tools absent")
+def test_true_blank_page_counts_correct_abstention(tmp_path) -> None:
+    pdf = tmp_path / "empty.pdf"
+    pdf.write_bytes(_one_page_pdf(""))
+    manifest = tmp_path / "gold.json"
+    manifest.write_text(json.dumps({
+        "dataset_type": "synthetic",
+        "documents": [{
+            "id": "true-blank", "pdf_path": pdf.name,
+            "pages": [{"page": 1, "expected_text": " "}],
+        }],
+    }), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    run = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-hallucinated-blank-pages", "0",
+         "--min-labeled-page-coverage", "1"],
+        capture_output=True, text=True, check=True, timeout=90,
+    )
+    report = json.loads(run.stdout)
+    assert report["labeling"]["blank_pages_correct"] == 1
+    assert report["labeling"]["hallucinated_blank_pages"] == 0
+    assert report["text"] is None
