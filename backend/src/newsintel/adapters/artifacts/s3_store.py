@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
+from hashlib import sha256
 from uuid import UUID
 
 import boto3
@@ -39,12 +40,34 @@ class S3RawArtifactStore:
         self, *, candidate_id: UUID, body: bytes, body_sha256: str,
         retrieved_at: datetime,
     ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".html",
+            content_type="text/html; charset=utf-8",
+        )
+
+    async def save_raw_pdf(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime,
+    ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".pdf",
+            content_type="application/pdf",
+        )
+
+    async def _save_raw(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime, suffix: str, content_type: str,
+    ) -> RawFetchArtifact:
         if len(body_sha256) != 64 or any(c not in "0123456789abcdef" for c in body_sha256):
             raise ValueError("body_sha256 must be a lowercase SHA-256 hex digest")
+        if sha256(body).hexdigest() != body_sha256:
+            raise ValueError("body_sha256 does not match raw artifact bytes")
         key_parts = [self._prefix, retrieved_at.strftime("%Y/%m/%d"),
-                     str(candidate_id), f"{body_sha256}.html"]
+                     str(candidate_id), f"{body_sha256}{suffix}"]
         key = "/".join(part for part in key_parts if part)
-        await asyncio.to_thread(self._save, key, body)
+        await asyncio.to_thread(self._save, key, body, content_type)
         return RawFetchArtifact(
             artifact_uri=f"s3://{self._bucket}/{key}",
             sha256=body_sha256,
@@ -52,17 +75,30 @@ class S3RawArtifactStore:
             storage_backend="s3",
         )
 
-    def _save(self, key: str, body: bytes) -> None:
-        try:
-            self._client.head_object(Bucket=self._bucket, Key=key)
-            return
-        except ClientError as exc:
-            if not _is_missing_object_error(exc):
-                raise
+    def _save(self, key: str, body: bytes, content_type: str) -> None:
+        # Avoid HEAD -> PUT TOCTOU races: S3 If-None-Match is atomic on AWS and
+        # supporting S3 implementations. Fail closed on unsupported endpoints.
         options: dict[str, object] = {
             "Bucket": self._bucket, "Key": key, "Body": body,
-            "ContentType": "text/html; charset=utf-8",
+            "ContentType": content_type, "IfNoneMatch": "*",
         }
         if self._sse:
             options["ServerSideEncryption"] = self._sse
-        self._client.put_object(**options)
+        try:
+            self._client.put_object(**options)
+            return
+        except ClientError as exc:
+            code = str(exc.response.get("Error", {}).get("Code", ""))
+            if code not in {"PreconditionFailed", "412", "ConditionalRequestConflict", "409"}:
+                raise
+        # A duplicate key must point to precisely the same bytes, even if a
+        # caller supplied the same SHA-256 label. Never silently trust a HEAD.
+        response = self._client.get_object(Bucket=self._bucket, Key=key)
+        try:
+            stored = response["Body"].read(len(body) + 1)
+        finally:
+            response["Body"].close()
+        if stored != body:
+            raise FileExistsError(
+                "raw S3 artifact key exists with different bytes; refusing overwrite"
+            )

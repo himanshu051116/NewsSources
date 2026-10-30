@@ -10,7 +10,7 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_HEAD = "0033_grounded_news_explainer"
+EXPECTED_HEAD = "0034_article_revision_history"
 
 
 def main() -> int:

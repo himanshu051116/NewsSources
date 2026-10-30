@@ -5,6 +5,7 @@ import asyncio
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -28,11 +29,31 @@ class LocalRawArtifactStore:
         self, *, candidate_id: UUID, body: bytes, body_sha256: str,
         retrieved_at: datetime,
     ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".html",
+        )
+
+    async def save_raw_pdf(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime,
+    ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".pdf",
+        )
+
+    async def _save_raw(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime, suffix: str,
+    ) -> RawFetchArtifact:
         if len(body_sha256) != 64 or any(c not in "0123456789abcdef" for c in body_sha256):
             raise ValueError("body_sha256 must be a lowercase SHA-256 hex digest")
+        if sha256(body).hexdigest() != body_sha256:
+            raise ValueError("body_sha256 does not match raw artifact bytes")
         destination = (
             self._root / retrieved_at.strftime("%Y/%m/%d")
-            / str(candidate_id) / f"{body_sha256}.html"
+            / str(candidate_id) / f"{body_sha256}{suffix}"
         )
         await asyncio.to_thread(_atomic_write, destination, body)
         return RawFetchArtifact(
@@ -53,6 +74,12 @@ def _atomic_write(destination: Path, body: bytes) -> None:
     tmp = filesystem_path.with_name(f".{filesystem_path.name}.{uuid4().hex}.tmp")
     try:
         tmp.write_bytes(body)
-        os.replace(tmp, filesystem_path)
+        try:
+            # An atomic hard link publishes a complete snapshot without ever
+            # replacing a prior artifact, even across competing workers.
+            os.link(tmp, filesystem_path)
+        except FileExistsError:
+            if filesystem_path.read_bytes() != body:
+                raise FileExistsError("raw artifact already exists with different bytes") from None
     finally:
         tmp.unlink(missing_ok=True)
