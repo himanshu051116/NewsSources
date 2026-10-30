@@ -524,3 +524,55 @@ async def test_pdf_fetch_is_routed_away_from_html_and_stored_as_pdf(monkeypatch)
     assert repository.successes[0][1].published_at is not None
     store.save_raw_pdf.assert_awaited_once()
     store.save_raw_html.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "warning",
+    [
+        "pdf_page_limit_reached",
+        "pdf_page_without_usable_text",
+        "pdf_ocr_page_budget_reached",
+        "pdf_page_ocr_failed",
+        "pdf_page_ocr_returned_no_text",
+        "pdf_table_layout_inspection_failed",
+        "ocr_text_unverified",
+        "manual_ocr_review_recommended",
+    ],
+)
+async def test_pdf_uncertainty_records_partial_stage_not_clean_extracted(monkeypatch, warning) -> None:
+    from dataclasses import replace
+    from hashlib import sha256
+
+    repo = FakeRepository()
+    url = "https://example.com/reports/extraction-review.pdf"
+    body = b"%PDF-1.4\\nfixture\\n"
+    fetched_result = replace(
+        fetched(), requested_url=url, final_url=url, body=body,
+        headers={"content-type": "application/pdf"},
+        body_sha256=sha256(body).hexdigest(),
+    )
+    pdf = replace(
+        extracted(), canonical_url=url, published_at=None,
+        extraction_method="pdf_native_pages",
+        metadata={"extraction_quality_score": 0.3,
+                  "document_requires_review": True},
+        warnings=(warning,),
+    )
+    monkeypatch.setattr(
+        "newsintel.application.articles.processing.extract_pdf_document",
+        lambda *_args, **_kwargs: pdf,
+    )
+    processor = ArticleProcessor(
+        repository=repo, fetcher=FakeFetcher(fetched_result),
+        extractor=lambda *_a, **_kw: pytest.fail("HTML extractor on PDF"),
+    )
+    result = await processor.process(
+        candidate(url=url, published_at=datetime.now(UTC)),
+        worker_id="pdf-review",
+    )
+    assert result.created_version
+    assert ArticleProcessingStage.PARTIAL in repo.stages
+    assert ArticleProcessingStage.EXTRACTED not in repo.stages
+    assert not repo.failures
+

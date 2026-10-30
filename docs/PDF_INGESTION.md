@@ -47,6 +47,11 @@ Each article version stores `document_pages` in JSONB metadata, and the
 article-version API exposes it. Every processed page includes its 1-based
 page number, a `#page=N` URL, start/end character offsets into the
 stored concatenated text, SHA-256 of page text, and extraction method.
+PDF extraction warnings also mark the article processing stage `partial`
+(including truncation, missing pages, failed OCR and review-required OCR),
+rather than silently recording a clean `extracted` stage. The extracted
+text remains available for investigation with its limitations visible.
+
 A separate `document_text_page_ratio` reports the share of *processed*
 pages with extracted text (not all original pages). Missing-text pages,
 truncation, failed OCR and OCR-unverified material set review flags and

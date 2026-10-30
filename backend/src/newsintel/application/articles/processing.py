@@ -103,6 +103,16 @@ _PARTIAL_EXTRACTION_WARNINGS = {
     "low_extraction_quality",
     "possible_paywall_or_partial_content",
     "possible_subscription_boilerplate",
+    # PDF capture can produce useful text while still being incomplete or
+    # uncertain. Preserve the data and record the partial pipeline stage.
+    "pdf_page_limit_reached",
+    "pdf_page_without_usable_text",
+    "pdf_ocr_page_budget_reached",
+    "pdf_page_ocr_failed",
+    "pdf_page_ocr_returned_no_text",
+    "pdf_table_layout_inspection_failed",
+    "ocr_text_unverified",
+    "manual_ocr_review_recommended",
 }
 
 
