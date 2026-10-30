@@ -15,7 +15,10 @@ Native text extraction uses Poppler (`pdfinfo`, `pdftotext`). When enabled,
 Tesseract OCR is used for pages with very little native text; `pdftoppm`
 rasterizes these pages. All CLI calls use argument arrays, fixed subprocess
 timeouts and temporary working directories, with limits on pages, bytes and
-page output. Failed and missing OCR tools do not silently invent document text.
+page output. Converter output is spooled to temporary files rather than
+accumulated without limits in memory. Extracted text is limited to one
+million characters, and a document-wide deadline bounds subprocess time.
+Failed and missing OCR tools do not silently invent document text.
 
 ## Configuration
 
@@ -27,6 +30,11 @@ page output. Failed and missing OCR tools do not silently invent document text.
   `eng+hin` when both OCR language packs are installed.
 - `NEWSINTEL_FETCH_MAX_BYTES=8000000` — shared HTTP byte cap; PDF
   extraction also enforces this size.
+- `NEWSINTEL_PDF_MAX_OCR_PAGES=6` — OCR at most six pages per document;
+  remaining pages keep available native text and receive an explicit warning.
+- `NEWSINTEL_PDF_PROCESSING_TIMEOUT_SECONDS=75` — an overall converter
+  deadline, below the default 120-second worker lease; slow fetch and
+  persistence can still consume additional time.
 
 The Docker image includes Poppler, Tesseract and English/Hindi language
 packages. Linux CI installs the same conversion binaries. Windows native PDF

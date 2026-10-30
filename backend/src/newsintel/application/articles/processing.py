@@ -306,6 +306,8 @@ class ArticleProcessor:
         pdf_max_bytes: int = 8_000_000,
         pdf_ocr_enabled: bool = False,
         pdf_ocr_language: str = "eng",
+        pdf_max_ocr_pages: int = 6,
+        pdf_processing_timeout_seconds: int = 75,
     ) -> None:
         self._repository = repository
         self._fetcher = fetcher
@@ -324,6 +326,8 @@ class ArticleProcessor:
         self._pdf_max_bytes = pdf_max_bytes
         self._pdf_ocr_enabled = pdf_ocr_enabled
         self._pdf_ocr_language = pdf_ocr_language
+        self._pdf_max_ocr_pages = pdf_max_ocr_pages
+        self._pdf_processing_timeout_seconds = pdf_processing_timeout_seconds
 
     async def process(
         self,
@@ -471,6 +475,8 @@ class ArticleProcessor:
                     max_bytes=self._pdf_max_bytes,
                     ocr_enabled=self._pdf_ocr_enabled,
                     ocr_language=self._pdf_ocr_language,
+                    max_ocr_pages=self._pdf_max_ocr_pages,
+                    max_duration_seconds=self._pdf_processing_timeout_seconds,
                 )
                 if candidate.published_at is not None:
                     extracted = replace(

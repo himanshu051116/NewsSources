@@ -173,3 +173,66 @@ def test_failed_ocr_does_not_discard_existing_native_text(monkeypatch) -> None:
     assert result.metadata["ocr_failure_count"] == 1
     assert result.metadata["document_pages"][0]["extraction_method"] == "pdf_native_text"
     assert "pdf_page_ocr_failed" in result.warnings
+
+
+def test_pdf_subprocess_deadline_blocks_execution_before_start(monkeypatch) -> None:
+    import time
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("no conversion should start after budget exhaustion")
+
+    monkeypatch.setattr(document_pdf.subprocess, "run", forbidden)
+    with pytest.raises(document_pdf.PDFExtractionError, match="budget exhausted"):
+        document_pdf._run(
+            ["pdfinfo", "untrusted.pdf"], timeout=12,
+            deadline=time.monotonic() - 0.5,
+        )
+
+
+@pytest.mark.skipif(
+    not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+    reason="Poppler is unavailable",
+)
+def test_ocr_page_budget_preserves_native_text_and_warns(monkeypatch) -> None:
+    calls = []
+
+    def fake_ocr(filename, page_number, **kwargs):
+        calls.append(page_number)
+        return "Review needed on scanned material"
+
+    monkeypatch.setattr(document_pdf, "_ocr_page", fake_ocr)
+    result = document_pdf.extract_pdf_document(
+        sample_pdf(), base_url="https://publisher.example/report.pdf",
+        ocr_enabled=True, min_native_chars=999, max_ocr_pages=1,
+    )
+    assert calls == [1]
+    assert result.metadata["ocr_attempt_count"] == 1
+    assert result.metadata["ocr_page_budget"] == 1
+    assert "pdf_ocr_page_budget_reached" in result.warnings
+    assert SECOND in result.text_content
+    assert result.metadata["document_pages"][1]["extraction_method"] == "pdf_native_text"
+
+
+@pytest.mark.skipif(
+    not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+    reason="Poppler is unavailable",
+)
+def test_pdf_total_text_character_limit_rejects_oversized_extraction() -> None:
+    with pytest.raises(document_pdf.PDFExtractionError, match="character limit"):
+        document_pdf.extract_pdf_document(
+            sample_pdf(), base_url="https://publisher.example/report.pdf",
+            max_text_characters=100,
+        )
+
+
+def test_pdf_budget_parameter_validation() -> None:
+    for options in (
+        {"max_ocr_pages": -1},
+        {"max_duration_seconds": 2},
+        {"max_text_characters": 50},
+    ):
+        with pytest.raises(ValueError):
+            document_pdf.extract_pdf_document(
+                b"%PDF-1.4", base_url="https://publisher.example/report.pdf",
+                **options,
+            )

@@ -90,6 +90,8 @@ async def run_worker() -> None:
         pdf_max_bytes=settings.fetch_max_bytes,
         pdf_ocr_enabled=settings.pdf_ocr_enabled,
         pdf_ocr_language=settings.pdf_ocr_language,
+        pdf_max_ocr_pages=settings.pdf_max_ocr_pages,
+        pdf_processing_timeout_seconds=settings.pdf_processing_timeout_seconds,
     )
     worker_id = f"{socket.gethostname()}:{os.getpid()}"
     worker = ArticleWorker(

@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     pdf_max_pages: int = Field(default=40, ge=1, le=100)
     pdf_ocr_enabled: bool = False
     pdf_ocr_language: str = "eng"
+    pdf_max_ocr_pages: int = Field(default=6, ge=0, le=40)
+    pdf_processing_timeout_seconds: int = Field(default=75, ge=10, le=110)
     browser_renderer_enabled: bool = False
     browser_renderer_url: str = "http://127.0.0.1:8025"
     browser_renderer_token: SecretStr = SecretStr("")
