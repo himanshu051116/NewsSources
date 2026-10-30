@@ -17,7 +17,7 @@ FIRST = "Agency confirms water quality inspection results and issues a detailed 
 SECOND = "Officials say page two contains independent laboratory observations."
 
 
-def sample_pdf(*, second: bool = True) -> bytes:
+def sample_pdf(*, second: bool = True, blank_second: bool = False) -> bytes:
     """Build a tiny valid PDF without adding a runtime PDF-generation dependency."""
     def stream(text: str) -> bytes:
         command = f"BT /F1 12 Tf 72 720 Td ({text}) Tj ET".encode("ascii")
@@ -39,7 +39,7 @@ def sample_pdf(*, second: bool = True) -> bytes:
         objs += [
             b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
             b"/Resources << /Font << /F1 4 0 R >> >> /Contents 7 0 R >>",
-            stream(SECOND),
+            stream("" if blank_second else SECOND),
         ]
     body = bytearray(b"%PDF-1.4\n")
     offsets = [0]
@@ -236,3 +236,38 @@ def test_pdf_budget_parameter_validation() -> None:
                 b"%PDF-1.4", base_url="https://publisher.example/report.pdf",
                 **options,
             )
+
+
+@pytest.mark.skipif(
+    not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+    reason="Poppler is unavailable",
+)
+def test_pdf_blank_page_forces_review_and_reduces_capture_score() -> None:
+    result = document_pdf.extract_pdf_document(
+        sample_pdf(blank_second=True),
+        base_url="https://publisher.example/reports/incomplete.pdf",
+    )
+    assert result.metadata["document_page_count"] == 2
+    assert result.metadata["document_pages_with_text"] == 1
+    assert result.metadata["document_pages_without_text"] == 1
+    assert result.metadata["document_text_page_ratio"] == 0.5
+    assert result.metadata["document_requires_review"] is True
+    assert "pdf_page_without_usable_text" in result.metadata["document_review_reasons"]
+    assert result.metadata["extraction_quality_score"] <= 0.3
+    assert result.text_content == FIRST
+
+
+@pytest.mark.skipif(
+    not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+    reason="Poppler is unavailable",
+)
+def test_pdf_partial_page_limit_never_receives_full_capture_quality() -> None:
+    result = document_pdf.extract_pdf_document(
+        sample_pdf(),
+        base_url="https://publisher.example/reports/partial.pdf",
+        max_pages=1,
+    )
+    assert result.metadata["document_truncated"] is True
+    assert result.metadata["document_requires_review"] is True
+    assert "pdf_page_limit_reached" in result.metadata["document_review_reasons"]
+    assert result.metadata["extraction_quality_score"] <= 0.3

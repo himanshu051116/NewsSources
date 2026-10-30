@@ -47,6 +47,11 @@ Each article version stores `document_pages` in JSONB metadata, and the
 article-version API exposes it. Every processed page includes its 1-based
 page number, a `#page=N` URL, start/end character offsets into the
 stored concatenated text, SHA-256 of page text, and extraction method.
+A separate `document_text_page_ratio` reports the share of *processed*
+pages with extracted text (not all original pages). Missing-text pages,
+truncation, failed OCR and OCR-unverified material set review flags and
+lower the capture-quality signal; neither metric is an accuracy score or
+probability that an extracted claim is true.
 
 OCR page records explicitly say `ocr_unverified=true`; they must be
 human-reviewed before use as conclusive evidence. The Linux test runner now

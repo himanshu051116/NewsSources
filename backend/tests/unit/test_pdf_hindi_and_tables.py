@@ -100,6 +100,8 @@ def test_scanned_hindi_document_recovers_devanagari_but_marks_ocr_unverified() -
     assert "सरकार" in result.text_content
     assert "योजना" in result.text_content
     assert result.metadata["ocr_page_count"] == 1
+    assert result.metadata["document_requires_review"] is True
+    assert "manual_ocr_review_recommended" in result.metadata["document_review_reasons"]
     assert result.metadata["document_pages"][0]["ocr_unverified"] is True
     assert "manual_ocr_review_recommended" in result.warnings
     assert result.metadata["document_table_candidates"] == []

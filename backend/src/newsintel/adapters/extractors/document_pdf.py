@@ -147,6 +147,8 @@ def extract_pdf_document(
         ocr_used = 0
         ocr_attempts = 0
         ocr_failures = 0
+        readable_pages = 0
+        missing_pages = 0
 
         if page_count > max_pages:
             warnings.append("pdf_page_limit_reached")
@@ -197,6 +199,9 @@ def extract_pdf_document(
                             warnings.append("pdf_page_ocr_returned_no_text")
             if not text:
                 warnings.append("pdf_page_without_usable_text")
+                missing_pages += 1
+            else:
+                readable_pages += 1
             if text and text_parts:
                 cursor += 2
             if cursor + len(text) > max_text_characters:
@@ -221,6 +226,23 @@ def extract_pdf_document(
         warnings.append("missing_text_content")
     if ocr_used:
         warnings.append("manual_ocr_review_recommended")
+    # These signals describe capture completeness, not factual correctness.
+    review_reasons = list(dict.fromkeys(
+        reason for reason in warnings
+        if reason in {
+            "pdf_page_limit_reached", "pdf_page_without_usable_text",
+            "pdf_ocr_page_budget_reached", "pdf_page_ocr_failed",
+            "pdf_page_ocr_returned_no_text", "manual_ocr_review_recommended",
+            "pdf_table_layout_inspection_failed", "missing_text_content",
+        }
+    ))
+    is_incomplete = limit < page_count or missing_pages > 0 or ocr_failures > 0
+    capture_quality = (
+        0.2 if not readable_pages else
+        0.3 if is_incomplete else
+        0.5 if ocr_used else
+        0.8
+    )
     return ExtractedArticle(
         title=_title(base_url, info),
         byline=None,
@@ -237,6 +259,11 @@ def extract_pdf_document(
             "document_byte_size": len(body),
             "document_page_count": page_count,
             "document_pages_processed": limit,
+            "document_pages_with_text": readable_pages,
+            "document_pages_without_text": missing_pages,
+            "document_text_page_ratio": readable_pages / limit,
+            "document_requires_review": bool(review_reasons),
+            "document_review_reasons": review_reasons,
             "document_pages": pages,
             "document_table_candidates": table_candidates,
             "document_table_review_required": bool(table_candidates),
@@ -246,7 +273,7 @@ def extract_pdf_document(
             "ocr_page_budget": max_ocr_pages,
             "processing_time_budget_seconds": max_duration_seconds,
             "document_truncated": limit < page_count,
-            "extraction_quality_score": 0.5 if ocr_used else 0.8,
+            "extraction_quality_score": capture_quality,
             "publication_date_basis": "unconfirmed",
             "word_count": len(text_content.split()),
         },

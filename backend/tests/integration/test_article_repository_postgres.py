@@ -700,6 +700,11 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
             "document_page_count": 1,
             "document_pages_processed": 1,
             "document_truncated": False,
+            "document_pages_with_text": 1,
+            "document_pages_without_text": 0,
+            "document_text_page_ratio": 1.0,
+            "document_requires_review": False,
+            "document_review_reasons": [],
             "document_pages": pages,
             "document_table_candidates": table_candidates,
             "document_table_review_required": True,
@@ -719,6 +724,10 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
     detail = await ArticleQueryService(factory).get_article(result.article_id)
     assert detail is not None and detail.latest_version is not None
     assert detail.latest_version.document_page_count == 1
+    assert detail.latest_version.document_pages_with_text == 1
+    assert detail.latest_version.document_pages_without_text == 0
+    assert detail.latest_version.document_text_page_ratio == 1.0
+    assert detail.latest_version.document_requires_review is False
     assert detail.latest_version.document_pages == pages
     assert detail.latest_version.document_table_candidates == table_candidates
     assert detail.latest_version.document_table_review_required is True
