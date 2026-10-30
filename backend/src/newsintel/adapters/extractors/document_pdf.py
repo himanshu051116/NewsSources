@@ -17,6 +17,7 @@ from tempfile import TemporaryDirectory
 from urllib.parse import unquote, urlsplit
 
 from newsintel.adapters.extractors.article_html import ExtractedArticle
+from newsintel.domain.intelligence.pdf_table_layout import detect_table_candidates
 
 
 class PDFExtractionError(ValueError):
@@ -97,6 +98,7 @@ def extract_pdf_document(
     max_ocr_pages: int = 6,
     max_duration_seconds: int = 75,
     max_text_characters: int = 1_000_000,
+    max_table_inspection_pages: int = 6,
 ) -> ExtractedArticle:
     """Return article-compatible text and exact per-page text offsets.
 
@@ -118,6 +120,8 @@ def extract_pdf_document(
         raise ValueError("max_duration_seconds must be 10..110")
     if not 100 <= max_text_characters <= 2_000_000:
         raise ValueError("max_text_characters must be 100..2000000")
+    if not 0 <= max_table_inspection_pages <= 20:
+        raise ValueError("max_table_inspection_pages must be 0..20")
     deadline = time.monotonic() + max_duration_seconds
 
     with TemporaryDirectory(prefix="newsintel-pdf-") as folder:
@@ -136,6 +140,7 @@ def extract_pdf_document(
         limit = min(page_count, max_pages)
         text_parts: list[str] = []
         pages: list[dict[str, object]] = []
+        table_candidates: list[dict[str, object]] = []
         warnings: list[str] = []
         cursor = 0
         ocr_used = 0
@@ -152,6 +157,22 @@ def extract_pdf_document(
             ).decode("utf-8", errors="replace").strip()
             text = native
             method = "pdf_native_text"
+            if number <= max_table_inspection_pages and native:
+                try:
+                    layout = _run(
+                        ["pdftotext", "-layout", "-f", str(number), "-l",
+                         str(number), "-enc", "UTF-8", "-nopgbrk",
+                         str(filename), "-"],
+                        timeout=12, deadline=deadline, max_output=500_000,
+                    ).decode("utf-8", errors="replace")
+                except PDFExtractionError:
+                    warnings.append("pdf_table_layout_inspection_failed")
+                else:
+                    table_candidates.extend(
+                        detect_table_candidates(
+                            layout, page=number, source_url=base_url,
+                        )
+                    )
             if len(native.strip()) < min_native_chars and ocr_enabled:
                 if ocr_attempts >= max_ocr_pages:
                     warnings.append("pdf_ocr_page_budget_reached")
@@ -216,6 +237,8 @@ def extract_pdf_document(
             "document_page_count": page_count,
             "document_pages_processed": limit,
             "document_pages": pages,
+            "document_table_candidates": table_candidates,
+            "document_table_review_required": bool(table_candidates),
             "ocr_page_count": ocr_used,
             "ocr_attempt_count": ocr_attempts,
             "ocr_failure_count": ocr_failures,

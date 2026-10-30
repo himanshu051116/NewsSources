@@ -48,7 +48,18 @@ page number, a `#page=N` URL, start/end character offsets into the
 stored concatenated text, SHA-256 of page text, and extraction method.
 
 OCR page records explicitly say `ocr_unverified=true`; they must be
-human-reviewed before use as conclusive evidence.
+human-reviewed before use as conclusive evidence. The Linux test runner now
+installs the Hindi Tesseract model and tests recognition of a scanned
+Devanagari page. This is synthetic, not a representative multi-publisher
+accuracy benchmark.
+
+For the first six pages, a separate `pdftotext -layout` pass identifies
+**potential** multi-column numeric tables. The `document_table_candidates`
+API field preserves the raw layout lines and split cells. Every table
+candidate has `review_required=true` and `verified_table=false` because
+whitespace-based layout heuristics are not reliable enough to promote
+numbers into checked claims. Original article text and page offsets remain
+unchanged.
 
 Claims now also receive an optional `document_provenance` anchor in their
 extraction features and originating evidence metadata. The anchor is assigned

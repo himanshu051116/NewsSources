@@ -1546,6 +1546,12 @@ def _version_view(version: ArticleVersionModel) -> ArticleVersionView:
         browser_rendered=bool(version.metadata_.get("browser_rendered")),
         raw_artifact_uri=_raw_artifact_uri(version),
         document_pages=_dict_list(version.metadata_.get("document_pages")),
+        document_table_candidates=_dict_list(
+            version.metadata_.get("document_table_candidates")
+        ),
+        document_table_review_required=bool(
+            version.metadata_.get("document_table_review_required")
+        ),
         document_page_count=(
             version.metadata_.get("document_page_count")
             if isinstance(version.metadata_.get("document_page_count"), int)
