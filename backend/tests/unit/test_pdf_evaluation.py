@@ -124,6 +124,8 @@ def test_cli_scores_labeled_local_pdf_and_never_promotes_synthetic_to_real(tmp_p
     assert result["citations"]["citation_precision"] == 1
     assert result["citations"]["correct_abstentions"] == 1
     assert result["documents_evaluated"] == 1
+    assert result["tables"]["false_table_candidates"] is None
+    assert result["tables"]["fully_labeled_table_documents"] == 0
     passing = subprocess.run(
         [sys.executable, str(script), "--manifest", str(manifest),
          "--max-character-error-rate", "0", "--min-citation-precision", "1",
@@ -141,3 +143,38 @@ def test_cli_scores_labeled_local_pdf_and_never_promotes_synthetic_to_real(tmp_p
     )
     assert failing.returncode == 1
     assert json.loads(failing.stdout)["quality_gates"]["passed"] is False
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler conversion tools absent")
+def test_table_false_positive_gate_requires_complete_ground_truth(tmp_path) -> None:
+    pdf = tmp_path / "one.pdf"
+    pdf.write_bytes(_one_page_pdf("A report without any detected table."))
+    manifest = tmp_path / "gold.json"
+    entry = {
+        "dataset_type": "synthetic",
+        "documents": [{
+            "id": "no-table", "pdf_path": pdf.name, "pages": [{
+                "page": 1, "expected_text": "A report without any detected table.",
+            }],
+        }],
+    }
+    manifest.write_text(json.dumps(entry), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    rejected = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-false-table-candidates", "0"],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert rejected.returncode != 0
+    assert "no complete ground-truth coverage" in rejected.stderr
+    entry["documents"][0]["tables_fully_annotated"] = True
+    manifest.write_text(json.dumps(entry), encoding="utf-8")
+    accepted = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-false-table-candidates", "0"],
+        capture_output=True, text=True, check=True, timeout=90,
+    )
+    report = json.loads(accepted.stdout)
+    assert report["tables"]["false_table_candidates"] == 0
+    assert report["tables"]["fully_labeled_table_documents"] == 1

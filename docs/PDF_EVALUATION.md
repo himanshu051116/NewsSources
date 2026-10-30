@@ -42,6 +42,7 @@ This document is the offline, reproducible QA procedure for
       "pages": [
         {"page": 1, "expected_text": "Human-corrected page transcription"}
       ],
+      "tables_fully_annotated": true,
       "tables": [
         {
           "page": 1,
@@ -78,7 +79,13 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
 - **Table-cell precision and recall**: positional exact matches of labeled
   rows/columns against review-only table candidates. A candidate that is
   absent receives zero recall; guessed numbers do not count as matches.
-  Rows must first be adjudicated in source order.
+  Rows must first be adjudicated in source order. Set
+  `tables_fully_annotated: true` only after an editor has reviewed every
+  page for tables, including pages with no tables. Extra candidates on
+  *any page*, even one that already has a labeled table, are then counted
+  as false detections. Without full labeling, extra candidates are reported
+  as **unjudged**, never automatically called false positives. The optional
+  `--max-false-table-candidates` gate refuses incomplete ground truth.
 - **Citation precision**: correct page anchors divided by all proposed
   anchors. **Citation recall**: correct anchors divided by all expected
   anchors. Correct abstentions, wrong anchors, missed anchors and overall

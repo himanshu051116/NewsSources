@@ -34,6 +34,8 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
     text_samples, table_samples, citations = [], [], []
     missing_table_candidates = 0
     false_table_candidates = 0
+    unjudged_table_candidates = 0
+    fully_labeled_table_documents = 0
     documents = []
     for item in docs:
         if not isinstance(item, dict):
@@ -74,11 +76,23 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
             prediction = [row["cells"] for row in predicted["rows"]] if predicted else []
             table_samples.append(table_cell_counts(gold["expected_rows"], prediction))
         expected_tables = item.get("tables", [])
-        target_pages = {case["page"] for case in expected_tables}
-        false_table_candidates += sum(
-            len(candidates) for page, candidates in tables_by_page.items()
-            if page not in target_pages
-        )
+        complete = item.get("tables_fully_annotated", False)
+        if type(complete) is not bool:
+            raise ValueError("tables_fully_annotated must be boolean")
+        if complete:
+            fully_labeled_table_documents += 1
+        reviewed_candidates = {
+            (case["page"], case.get("candidate_index", 0))
+            for case in expected_tables
+        }
+        for page, candidates in tables_by_page.items():
+            for index, _ in enumerate(candidates):
+                if (page, index) in reviewed_candidates:
+                    continue
+                if complete:
+                    false_table_candidates += 1
+                else:
+                    unjudged_table_candidates += 1
         for case in item.get("citations", []):
             match = locate_pdf_source_sentence(
                 result.text_content,
@@ -109,7 +123,14 @@ def evaluate_manifest(manifest_path: Path) -> dict[str, object]:
         "tables": {
             **(aggregate_table_counts(table_samples) if table_samples else {}),
             "missing_table_candidates": missing_table_candidates,
-            "false_table_candidates_on_unlabeled_pages": false_table_candidates,
+            "false_table_candidates": (
+                false_table_candidates
+                if fully_labeled_table_documents == len(docs)
+                else None
+            ),
+            "confirmed_false_candidates_in_fully_labeled_documents": false_table_candidates,
+            "unjudged_table_candidates": unjudged_table_candidates,
+            "fully_labeled_table_documents": fully_labeled_table_documents,
         },
         "citations": citation_counts(citations) if citations else None,
         "documents": documents,
@@ -125,6 +146,7 @@ def main() -> int:
     parser.add_argument("--min-table-cell-recall", type=float)
     parser.add_argument("--min-citation-precision", type=float)
     parser.add_argument("--max-wrong-citations", type=int)
+    parser.add_argument("--max-false-table-candidates", type=int)
     args = parser.parse_args()
     report = evaluate_manifest(args.manifest.resolve())
     checks: list[dict[str, object]] = []
@@ -134,6 +156,7 @@ def main() -> int:
         ("cell_recall", "tables", args.min_table_cell_recall, "min"),
         ("citation_precision", "citations", args.min_citation_precision, "min"),
         ("wrong", "citations", args.max_wrong_citations, "max"),
+        ("false_table_candidates", "tables", args.max_false_table_candidates, "max"),
     )
     for key, group, threshold, direction in gates:
         if threshold is None:
@@ -141,8 +164,8 @@ def main() -> int:
         if threshold < 0 or (direction == "min" and threshold > 1):
             parser.error(f"invalid threshold for {key}")
         data = report.get(group)
-        if not isinstance(data, dict) or key not in data:
-            parser.error(f"no labeled {group} samples to evaluate {key}")
+        if not isinstance(data, dict) or key not in data or data[key] is None:
+            parser.error(f"no complete ground-truth coverage for {group}.{key}")
         value = float(data[key])
         passed = value <= threshold if direction == "max" else value >= threshold
         checks.append({
