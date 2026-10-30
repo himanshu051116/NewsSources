@@ -12,9 +12,9 @@ from uuid import UUID, uuid4
 @dataclass(frozen=True, slots=True)
 class RawFetchArtifact:
     artifact_uri: str
+    storage_backend: str
     sha256: str
     byte_size: int
-    storage_backend: str
 
     def to_metadata(self) -> dict[str, str | int]:
         return asdict(self)
