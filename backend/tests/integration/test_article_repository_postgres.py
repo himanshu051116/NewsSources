@@ -659,6 +659,7 @@ async def test_busy_week_digest_samples_across_days_and_keeps_quality_metadata(p
 async def test_pdf_page_provenance_survives_storage_and_article_api(persistence):
     """Persist source-page offsets and expose them from the same article-version API."""
     from newsintel.application.articles.query_service import ArticleQueryService
+    from hashlib import sha256
 
     factory, _, _ = persistence
     repository = SqlAlchemyArticleProcessingRepository(factory)
@@ -672,17 +673,19 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
     )
     url = candidate.normalized_url
     pdf_bytes = b"%PDF-1.4\n%%EOF\n"
-    text = "The ministry announced a new inspection report and released its evidence."
+    text = "Officials said 31 people were injured in an incident on June 5, 2026."
     pages = [{
         "page": 1, "source_url": url + "#page=1",
         "char_start": 0, "char_end": len(text),
         "extraction_method": "pdf_native_text",
         "ocr_unverified": False,
+        "text_sha256": sha256(text.encode("utf-8")).hexdigest(),
     }]
     extracted = ExtractedArticle(
         title="Inspection report", byline=None,
         published_at=now, modified_at=None, language=None,
-        canonical_url=url, text_content=text, content_sha256="e" * 64,
+        canonical_url=url, text_content=text,
+        content_sha256=sha256(text.encode("utf-8")).hexdigest(),
         extraction_method="pdf_native_pages", metadata={
             "document_type": "application/pdf",
             "document_page_count": 1,
@@ -696,7 +699,7 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
     fetched = FetchResult(
         requested_url=url, final_url=url, status_code=200,
         headers={"content-type": "application/pdf"}, body=pdf_bytes,
-        body_sha256="f" * 64, retrieved_at=now, redirect_chain=(),
+        body_sha256=sha256(pdf_bytes).hexdigest(), retrieved_at=now, redirect_chain=(),
     )
     result = await repository.complete_success(
         candidate=candidate, run=run, fetched=fetched,
@@ -707,3 +710,20 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
     assert detail.latest_version.document_page_count == 1
     assert detail.latest_version.document_pages == pages
     assert detail.latest_version.text_content == text
+    claims = await ArticleQueryService(factory).get_article_claims(result.article_id)
+    assert claims is not None and len(claims) >= 1
+    anchored = [
+        claim for claim in claims
+        if "document_provenance" in claim.extraction_features
+    ]
+    assert anchored
+    origin = anchored[0].extraction_features["document_provenance"]
+    assert origin["page"] == 1
+    assert detail.latest_version.text_content[origin["char_start"]:origin["char_end"]] == text
+    assert origin["independent_confirmation"] is False
+    assert any(
+        link.metadata.get("document_provenance") == origin
+        and link.independence_score == 0.0
+        for link in anchored[0].evidence_links
+    )
+
