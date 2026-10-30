@@ -55,5 +55,8 @@ async def test_local_pdf_artifact_retains_original_pdf_bytes(tmp_path) -> None:
     )
     assert artifact.storage_backend == "local_filesystem"
     assert artifact.artifact_uri.endswith(f"{digest}.pdf")
-    stored_path = Path(artifact.artifact_uri.removeprefix("file://"))
+    from urllib.parse import urlsplit
+    from urllib.request import url2pathname
+
+    stored_path = Path(url2pathname(urlsplit(artifact.artifact_uri).path))
     assert stored_path.read_bytes() == body
