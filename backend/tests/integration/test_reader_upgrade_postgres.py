@@ -32,8 +32,13 @@ pytestmark = pytest.mark.integration
 persistence = _persistence_fixture
 
 
-async def ingest(factory, text, digest):
+async def ingest(
+    factory, text, digest, *,
+    title="Central bank announces interest rate policy",
+    published_at=None,
+):
     now = datetime.now(UTC)
+    published_at = published_at or now
     repo = SqlAlchemyArticleProcessingRepository(factory)
     candidate, = await repo.lease_due_candidates(worker_id="reader-test", limit=1, lease_seconds=120)
     run = await repo.start_fetch(candidate_id=candidate.id, worker_id="reader-test",
@@ -41,8 +46,8 @@ async def ingest(factory, text, digest):
     fetched = FetchResult(requested_url=candidate.normalized_url, final_url=candidate.normalized_url,
         status_code=200, headers={}, body=b"report", body_sha256=digest*64,
         retrieved_at=now, redirect_chain=())
-    extracted = ExtractedArticle(title="Central bank announces interest rate policy", byline=None,
-        published_at=now, modified_at=None, language="en", canonical_url=candidate.normalized_url,
+    extracted = ExtractedArticle(title=title, byline=None,
+        published_at=published_at, modified_at=None, language="en", canonical_url=candidate.normalized_url,
         text_content=text, content_sha256=digest*64, extraction_method="test", metadata={}, warnings=())
     return await repo.complete_success(candidate=candidate, run=run, fetched=fetched,
                                        extracted=extracted, raw_artifact=None, completed_at=now)
@@ -129,3 +134,84 @@ async def test_excerpt_backfill_preserves_other_metadata_and_skips_prepared_vers
         assert row.metadata_["unrelated"] == "preserved"
         assert row.metadata_["digest_excerpt"]["sentence"]
     assert await prepare_recent_excerpts(factory, limit=1) == 0
+
+
+async def _requeue_for_revision(factory, candidate_id):
+    """Reactivate the already-processed candidate via the existing bounded recrawl policy."""
+    now = datetime.now(UTC)
+    async with factory() as session, session.begin():
+        row = await session.get(UrlCandidateModel, candidate_id)
+        row.last_fetch_at = now - timedelta(hours=25)
+    async with factory() as session, session.begin():
+        candidate = await SqlAlchemyFrontierRepository(session).update_candidate_job_metadata(
+            candidate_id=candidate_id, published_at=now, discovered_at=now,
+        )
+        assert candidate.state == "ready"
+
+
+@pytest.mark.asyncio
+async def test_headline_only_article_correction_creates_chronological_revision(persistence):
+    factory, candidate_id, _ = persistence
+    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    body = "The regulator said interest rates would remain unchanged."
+    first = await ingest(factory, body, "d", title="Rates cut", published_at=published_at)
+    await _requeue_for_revision(factory, candidate_id)
+    second = await ingest(factory, body, "d", title="Rates unchanged", published_at=published_at)
+    assert second.created_version
+    assert second.version_id != first.version_id
+
+    async with factory() as session:
+        versions = list((await session.scalars(
+            select(ArticleVersionModel)
+            .where(ArticleVersionModel.article_id == first.article_id)
+            .order_by(ArticleVersionModel.version_number)
+        )).all())
+        assert [(v.version_number, v.title) for v in versions] == [
+            (1, "Rates cut"), (2, "Rates unchanged"),
+        ]
+        assert len({v.content_sha256 for v in versions}) == 1
+        article = await session.get(ArticleModel, first.article_id)
+        assert article.title == "Rates unchanged"
+
+
+@pytest.mark.asyncio
+async def test_revision_history_keeps_a_to_b_to_a_body_reversion(persistence):
+    factory, candidate_id, _ = persistence
+    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    old = "The regulator said 30 branches will remain open."
+    new = "The regulator said 20 branches will remain open."
+    first = await ingest(factory, old, "e", published_at=published_at)
+    await _requeue_for_revision(factory, candidate_id)
+    second = await ingest(factory, new, "f", published_at=published_at)
+    await _requeue_for_revision(factory, candidate_id)
+    third = await ingest(factory, old, "e", published_at=published_at)
+    assert first.article_id == second.article_id == third.article_id
+    assert third.created_version
+    assert third.version_id not in {first.version_id, second.version_id}
+    async with factory() as session:
+        versions = list((await session.scalars(
+            select(ArticleVersionModel)
+            .where(ArticleVersionModel.article_id == first.article_id)
+            .order_by(ArticleVersionModel.version_number)
+        )).all())
+        assert [(v.version_number, v.content_sha256) for v in versions] == [
+            (1, "e" * 64), (2, "f" * 64), (3, "e" * 64),
+        ]
+
+
+@pytest.mark.asyncio
+async def test_unchanged_recrawl_reuses_current_version_without_extra_rows(persistence):
+    factory, candidate_id, _ = persistence
+    published_at = datetime(2026, 10, 15, tzinfo=UTC)
+    text = "The regulator issued its quarterly financial update."
+    first = await ingest(factory, text, "a", published_at=published_at)
+    await _requeue_for_revision(factory, candidate_id)
+    second = await ingest(factory, text, "a", published_at=published_at)
+    assert not second.created_version
+    assert second.version_id == first.version_id
+    async with factory() as session:
+        versions = list((await session.scalars(
+            select(ArticleVersionModel)
+            .where(ArticleVersionModel.article_id == first.article_id)
+        )).all())
+        assert len(versions) == 1
