@@ -19,7 +19,7 @@ ROUTES = SRC / "api" / "routes"
 
 def test_v122_release_contract_and_schema_objects() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert {
         "search_deployments",
         "search_deployment_observations",
