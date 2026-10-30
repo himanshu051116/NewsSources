@@ -28,11 +28,29 @@ class LocalRawArtifactStore:
         self, *, candidate_id: UUID, body: bytes, body_sha256: str,
         retrieved_at: datetime,
     ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".html",
+        )
+
+    async def save_raw_pdf(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime,
+    ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".pdf",
+        )
+
+    async def _save_raw(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime, suffix: str,
+    ) -> RawFetchArtifact:
         if len(body_sha256) != 64 or any(c not in "0123456789abcdef" for c in body_sha256):
             raise ValueError("body_sha256 must be a lowercase SHA-256 hex digest")
         destination = (
             self._root / retrieved_at.strftime("%Y/%m/%d")
-            / str(candidate_id) / f"{body_sha256}.html"
+            / str(candidate_id) / f"{body_sha256}{suffix}"
         )
         await asyncio.to_thread(_atomic_write, destination, body)
         return RawFetchArtifact(

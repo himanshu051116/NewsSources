@@ -39,12 +39,32 @@ class S3RawArtifactStore:
         self, *, candidate_id: UUID, body: bytes, body_sha256: str,
         retrieved_at: datetime,
     ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".html",
+            content_type="text/html; charset=utf-8",
+        )
+
+    async def save_raw_pdf(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime,
+    ) -> RawFetchArtifact:
+        return await self._save_raw(
+            candidate_id=candidate_id, body=body, body_sha256=body_sha256,
+            retrieved_at=retrieved_at, suffix=".pdf",
+            content_type="application/pdf",
+        )
+
+    async def _save_raw(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime, suffix: str, content_type: str,
+    ) -> RawFetchArtifact:
         if len(body_sha256) != 64 or any(c not in "0123456789abcdef" for c in body_sha256):
             raise ValueError("body_sha256 must be a lowercase SHA-256 hex digest")
         key_parts = [self._prefix, retrieved_at.strftime("%Y/%m/%d"),
-                     str(candidate_id), f"{body_sha256}.html"]
+                     str(candidate_id), f"{body_sha256}{suffix}"]
         key = "/".join(part for part in key_parts if part)
-        await asyncio.to_thread(self._save, key, body)
+        await asyncio.to_thread(self._save, key, body, content_type)
         return RawFetchArtifact(
             artifact_uri=f"s3://{self._bucket}/{key}",
             sha256=body_sha256,
@@ -52,7 +72,7 @@ class S3RawArtifactStore:
             storage_backend="s3",
         )
 
-    def _save(self, key: str, body: bytes) -> None:
+    def _save(self, key: str, body: bytes, content_type: str) -> None:
         try:
             self._client.head_object(Bucket=self._bucket, Key=key)
             return
@@ -61,7 +81,7 @@ class S3RawArtifactStore:
                 raise
         options: dict[str, object] = {
             "Bucket": self._bucket, "Key": key, "Body": body,
-            "ContentType": "text/html; charset=utf-8",
+            "ContentType": content_type,
         }
         if self._sse:
             options["ServerSideEncryption"] = self._sse

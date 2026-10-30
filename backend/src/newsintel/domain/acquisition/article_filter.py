@@ -70,6 +70,7 @@ class UrlContentType(StrEnum):
     INVESTIGATION = "investigation"
     FACT_CHECK = "fact_check"
     PRESS_RELEASE = "press_release"
+    DOCUMENT_REPORT = "document_report"
     VIDEO_REPORT = "video_report"
     PHOTO_STORY = "photo_story"
     SECTION_PAGE = "section_page"
@@ -93,6 +94,7 @@ FETCHABLE_URL_TYPES = frozenset(
         UrlContentType.INVESTIGATION,
         UrlContentType.FACT_CHECK,
         UrlContentType.PRESS_RELEASE,
+        UrlContentType.DOCUMENT_REPORT,
         UrlContentType.VIDEO_REPORT,
         UrlContentType.PHOTO_STORY,
     }
@@ -258,6 +260,8 @@ def classify_article_url(url: str) -> UrlClassification:
     path = raw_path.strip("/")
     if not path:
         return UrlClassification(UrlContentType.HOMEPAGE, 0.99, "empty_path")
+    if path.endswith(".pdf"):
+        return UrlClassification(UrlContentType.DOCUMENT_REPORT, 0.97, "pdf_document")
     if path.endswith((".xml", ".rss", ".json", ".jpg", ".jpeg", ".png", ".webp", ".mp4")):
         return UrlClassification(UrlContentType.INVALID_PAGE, 0.95, "asset_or_feed_path")
     segments = [segment for segment in path.split("/") if segment]
