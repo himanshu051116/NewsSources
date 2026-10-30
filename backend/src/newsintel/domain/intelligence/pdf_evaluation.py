@@ -74,6 +74,16 @@ def table_cell_counts(
     """Position-sensitive cell exactness; no semantic matching or invented cells."""
     if not reference_rows:
         raise ValueError("a gold table must have at least one labeled row")
+    for rows in (reference_rows, predicted_rows):
+        if not isinstance(rows, list) or any(not isinstance(row, list) for row in rows):
+            raise ValueError("table rows must be lists of text cells")
+        cell_count = 0
+        for row in rows:
+            cell_count += len(row)
+            if cell_count > MAX_EVALUATION_UNITS:
+                raise ValueError("table exceeds 20000 cells; evaluate smaller samples")
+            if any(not isinstance(cell, str) for cell in row):
+                raise ValueError("table cells must contain text")
     gold = {(r, c): normalize_text(value) for r, row in enumerate(reference_rows)
             for c, value in enumerate(row)}
     predicted = {(r, c): normalize_text(value) for r, row in enumerate(predicted_rows)
