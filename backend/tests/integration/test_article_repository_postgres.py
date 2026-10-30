@@ -681,6 +681,15 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
         "ocr_unverified": False,
         "text_sha256": sha256(text.encode("utf-8")).hexdigest(),
     }]
+    table_candidates = [{
+        "page": 1, "source_url": url + "#page=1",
+        "layout_method": "pdftotext_layout_whitespace_heuristic",
+        "review_required": True, "verified_table": False,
+        "header_cells": ["District", "Cases", "Reports"],
+        "rows": [{"source_line_number": 1, "raw_text": "District  Cases  Reports",
+                  "cells": ["District", "Cases", "Reports"]}],
+        "truncated": False,
+    }]
     extracted = ExtractedArticle(
         title="Inspection report", byline=None,
         published_at=now, modified_at=None, language=None,
@@ -692,6 +701,8 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
             "document_pages_processed": 1,
             "document_truncated": False,
             "document_pages": pages,
+            "document_table_candidates": table_candidates,
+            "document_table_review_required": True,
             "extraction_quality_score": 0.8,
             "word_count": len(text.split()),
         }, warnings=(),
@@ -709,6 +720,8 @@ async def test_pdf_page_provenance_survives_storage_and_article_api(persistence)
     assert detail is not None and detail.latest_version is not None
     assert detail.latest_version.document_page_count == 1
     assert detail.latest_version.document_pages == pages
+    assert detail.latest_version.document_table_candidates == table_candidates
+    assert detail.latest_version.document_table_review_required is True
     assert detail.latest_version.text_content == text
     claims = await ArticleQueryService(factory).get_article_claims(result.article_id)
     assert claims is not None and len(claims) >= 1
