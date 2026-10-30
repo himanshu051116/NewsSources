@@ -653,3 +653,57 @@ async def test_busy_week_digest_samples_across_days_and_keeps_quality_metadata(p
     daily = await service.edition(DigestRequest(full_stream=True, as_of=end))
     assert daily.eligible_reports == 20
     assert daily.selected_days == 1
+
+
+@pytest.mark.asyncio
+async def test_pdf_page_provenance_survives_storage_and_article_api(persistence):
+    """Persist source-page offsets and expose them from the same article-version API."""
+    from newsintel.application.articles.query_service import ArticleQueryService
+
+    factory, _, _ = persistence
+    repository = SqlAlchemyArticleProcessingRepository(factory)
+    candidate, = await repository.lease_due_candidates(
+        worker_id="pdf-page-test", limit=1, lease_seconds=120,
+    )
+    now = datetime.now(UTC)
+    run = await repository.start_fetch(
+        candidate_id=candidate.id, worker_id="pdf-page-test",
+        trace_id=uuid4(), started_at=now, lease_version=candidate.lease_version,
+    )
+    url = candidate.normalized_url
+    pdf_bytes = b"%PDF-1.4\n%%EOF\n"
+    text = "The ministry announced a new inspection report and released its evidence."
+    pages = [{
+        "page": 1, "source_url": url + "#page=1",
+        "char_start": 0, "char_end": len(text),
+        "extraction_method": "pdf_native_text",
+        "ocr_unverified": False,
+    }]
+    extracted = ExtractedArticle(
+        title="Inspection report", byline=None,
+        published_at=now, modified_at=None, language=None,
+        canonical_url=url, text_content=text, content_sha256="e" * 64,
+        extraction_method="pdf_native_pages", metadata={
+            "document_type": "application/pdf",
+            "document_page_count": 1,
+            "document_pages_processed": 1,
+            "document_truncated": False,
+            "document_pages": pages,
+            "extraction_quality_score": 0.8,
+            "word_count": len(text.split()),
+        }, warnings=(),
+    )
+    fetched = FetchResult(
+        requested_url=url, final_url=url, status_code=200,
+        headers={"content-type": "application/pdf"}, body=pdf_bytes,
+        body_sha256="f" * 64, retrieved_at=now, redirect_chain=(),
+    )
+    result = await repository.complete_success(
+        candidate=candidate, run=run, fetched=fetched,
+        extracted=extracted, raw_artifact=None, completed_at=now,
+    )
+    detail = await ArticleQueryService(factory).get_article(result.article_id)
+    assert detail is not None and detail.latest_version is not None
+    assert detail.latest_version.document_page_count == 1
+    assert detail.latest_version.document_pages == pages
+    assert detail.latest_version.text_content == text

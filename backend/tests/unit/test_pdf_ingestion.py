@@ -137,3 +137,19 @@ def test_pdf_url_classification_respects_recency_policy() -> None:
         observed_at=datetime(2026, 11, 20, tzinfo=UTC),
     )
     assert not rejected.accepted
+
+
+@pytest.mark.skipif(
+    not all(shutil.which(binary) for binary in ("pdftotext", "pdfinfo", "pdftoppm", "tesseract")),
+    reason="Poppler/Tesseract are unavailable",
+)
+def test_real_tesseract_ocr_from_rendered_pdf_page() -> None:
+    result = document_pdf.extract_pdf_document(
+        sample_pdf(second=False),
+        base_url="https://publisher.example/reports/scan.pdf",
+        ocr_enabled=True, min_native_chars=999,
+    )
+    assert result.metadata["ocr_page_count"] == 1
+    assert result.extraction_method == "pdf_pages_with_ocr"
+    assert "Agency" in result.text_content
+    assert result.metadata["document_pages"][0]["ocr_unverified"]
