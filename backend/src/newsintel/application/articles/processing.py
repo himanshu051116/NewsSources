@@ -13,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from newsintel.adapters.artifacts.local_store import RawFetchArtifact
 from newsintel.adapters.extractors.article_html import ExtractedArticle, ExtractionProfile
+from newsintel.adapters.extractors.document_pdf import extract_pdf_document
 from newsintel.adapters.http.crawl_policy import RobotsDeniedError
 from newsintel.adapters.http.safe_fetcher import FetchRequest, FetchResult
 from newsintel.adapters.rendering.browser_client import RenderedPage
@@ -219,6 +220,11 @@ class Fetcher(Protocol):
 
 
 class RawArtifactStore(Protocol):
+    async def save_raw_pdf(
+        self, *, candidate_id: UUID, body: bytes, body_sha256: str,
+        retrieved_at: datetime,
+    ) -> RawFetchArtifact: ...
+
     async def save_raw_html(
         self,
         *,
@@ -296,6 +302,10 @@ class ArticleProcessor:
         retry_max_seconds: int = 3_600,
         retry_jitter_ratio: float = 0.15,
         recent_article_window_hours: int = DEFAULT_RECENT_WINDOW_HOURS,
+        pdf_max_pages: int = 40,
+        pdf_max_bytes: int = 8_000_000,
+        pdf_ocr_enabled: bool = False,
+        pdf_ocr_language: str = "eng",
     ) -> None:
         self._repository = repository
         self._fetcher = fetcher
@@ -310,6 +320,10 @@ class ArticleProcessor:
         self._retry_max_seconds = retry_max_seconds
         self._retry_jitter_ratio = retry_jitter_ratio
         self._recent_article_window_hours = recent_article_window_hours
+        self._pdf_max_pages = pdf_max_pages
+        self._pdf_max_bytes = pdf_max_bytes
+        self._pdf_ocr_enabled = pdf_ocr_enabled
+        self._pdf_ocr_language = pdf_ocr_language
 
     async def process(
         self,
@@ -411,9 +425,18 @@ class ArticleProcessor:
                 raise ArticleProcessingError(
                     f"article returned HTTP {fetched.status_code}"
                 )
+            is_pdf = (
+                fetched.body.startswith(b"%PDF-")
+                or "application/pdf" in (content_type or "").casefold()
+                or urlsplit(fetched.final_url).path.casefold().endswith(".pdf")
+            )
             raw_artifact = None
             if self._raw_artifact_store is not None:
-                raw_artifact = await self._raw_artifact_store.save_raw_html(
+                save_snapshot = (
+                    self._raw_artifact_store.save_raw_pdf
+                    if is_pdf else self._raw_artifact_store.save_raw_html
+                )
+                raw_artifact = await save_snapshot(
                     candidate_id=candidate.id,
                     body=fetched.body,
                     body_sha256=fetched.body_sha256,
@@ -434,26 +457,50 @@ class ArticleProcessor:
                 run_id=run.id,
             )
             logger.info("extraction_started", **context, final_url=fetched.final_url)
-            extraction_profile = await self._resolve_extraction_profile(
-                publisher_id=candidate.publisher_id
+            extraction_profile = (
+                None if is_pdf else await self._resolve_extraction_profile(
+                    publisher_id=candidate.publisher_id
+                )
             )
-            extracted = (
-                self._extractor(
+            if is_pdf:
+                extracted = await asyncio.to_thread(
+                    extract_pdf_document,
                     fetched.body,
                     base_url=fetched.final_url,
-                    profile=extraction_profile,
+                    max_pages=self._pdf_max_pages,
+                    max_bytes=self._pdf_max_bytes,
+                    ocr_enabled=self._pdf_ocr_enabled,
+                    ocr_language=self._pdf_ocr_language,
                 )
-                if extraction_profile is not None
-                else self._extractor(fetched.body, base_url=fetched.final_url)
-            )
+                if candidate.published_at is not None:
+                    extracted = replace(
+                        extracted,
+                        published_at=candidate.published_at,
+                        metadata={
+                            **extracted.metadata,
+                            "publication_date_basis": "discovery_candidate",
+                        },
+                    )
+            else:
+                extracted = (
+                    self._extractor(
+                        fetched.body,
+                        base_url=fetched.final_url,
+                        profile=extraction_profile,
+                    )
+                    if extraction_profile is not None
+                    else self._extractor(fetched.body, base_url=fetched.final_url)
+                )
             fidelity_html = fetched.body
             fidelity_base_url = fetched.final_url
             rendered_artifact = None
-            rendered = await self._maybe_render_browser(
-                fetched=fetched,
-                extracted=extracted,
-                profile=extraction_profile,
-                context=context,
+            rendered = (
+                None if is_pdf else await self._maybe_render_browser(
+                    fetched=fetched,
+                    extracted=extracted,
+                    profile=extraction_profile,
+                    context=context,
+                )
             )
             if rendered is not None:
                 rendered_page, rendered_extracted = rendered
@@ -480,44 +527,48 @@ class ArticleProcessor:
                 )
                 fidelity_html = rendered_page.html
                 fidelity_base_url = rendered_page.final_url
-            try:
-                fidelity = assess_extraction_fidelity(
-                    fidelity_html,
-                    base_url=fidelity_base_url,
-                    article=extracted,
-                )
-                extracted = replace(
-                    extracted,
-                    metadata={
-                        **extracted.metadata,
-                        "extraction_fidelity": fidelity.to_dict(),
-                    },
-                )
-            except Exception as exc:
-                # Fidelity is an audit signal. A diagnostic failure must never
-                # make a successfully extracted public article disappear.
-                logger.warning(
-                    "extraction_fidelity_assessment_failed",
-                    **context,
-                    error_type=type(exc).__name__,
-                    error_message=str(exc)[:300],
-                )
+            if not is_pdf:
+                try:
+                    fidelity = assess_extraction_fidelity(
+                        fidelity_html,
+                        base_url=fidelity_base_url,
+                        article=extracted,
+                    )
+                    extracted = replace(
+                        extracted,
+                        metadata={
+                            **extracted.metadata,
+                            "extraction_fidelity": fidelity.to_dict(),
+                        },
+                    )
+                except Exception as exc:
+                    # Fidelity is an audit signal. A diagnostic failure must never
+                    # make a successfully extracted public article disappear.
+                    logger.warning(
+                        "extraction_fidelity_assessment_failed",
+                        **context,
+                        error_type=type(exc).__name__,
+                        error_message=str(exc)[:300],
+                    )
             if not extracted.text_content:
-                await self._record_extraction_profile_failure(
-                    publisher_id=candidate.publisher_id
-                )
+                if not is_pdf:
+                    await self._record_extraction_profile_failure(
+                        publisher_id=candidate.publisher_id
+                    )
                 raise InsufficientArticleContentError("article text could not be extracted")
             try:
                 _raise_for_unacceptable_extraction(extracted)
             except Exception:
-                await self._record_extraction_profile_failure(
-                    publisher_id=candidate.publisher_id
-                )
+                if not is_pdf:
+                    await self._record_extraction_profile_failure(
+                        publisher_id=candidate.publisher_id
+                    )
                 raise
-            await self._record_extraction_profile_success(
-                publisher_id=candidate.publisher_id,
-                extracted=extracted,
-            )
+            if not is_pdf:
+                await self._record_extraction_profile_success(
+                    publisher_id=candidate.publisher_id,
+                    extracted=extracted,
+                )
             extraction_stage = (
                 ArticleProcessingStage.PARTIAL
                 if set(extracted.warnings) & _PARTIAL_EXTRACTION_WARNINGS

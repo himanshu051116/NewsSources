@@ -86,6 +86,10 @@ async def run_worker() -> None:
         retry_max_seconds=settings.article_fetch_retry_max_seconds,
         retry_jitter_ratio=settings.article_fetch_retry_jitter_ratio,
         recent_article_window_hours=settings.recent_article_window_hours,
+        pdf_max_pages=settings.pdf_max_pages,
+        pdf_max_bytes=settings.fetch_max_bytes,
+        pdf_ocr_enabled=settings.pdf_ocr_enabled,
+        pdf_ocr_language=settings.pdf_ocr_language,
     )
     worker_id = f"{socket.gethostname()}:{os.getpid()}"
     worker = ArticleWorker(
