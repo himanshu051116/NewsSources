@@ -110,6 +110,8 @@ def extract_pdf_document(
         warnings: list[str] = []
         cursor = 0
         ocr_used = 0
+        ocr_attempts = 0
+        ocr_failures = 0
 
         if page_count > max_pages:
             warnings.append("pdf_page_limit_reached")
@@ -122,10 +124,22 @@ def extract_pdf_document(
             text = native
             method = "pdf_native_text"
             if len(native.strip()) < min_native_chars and ocr_enabled:
-                text = _ocr_page(filename, number, language=ocr_language, workdir=root)
-                method = "ocr_tesseract"
-                ocr_used += 1
-                warnings.append("ocr_text_unverified")
+                ocr_attempts += 1
+                try:
+                    ocr_text = _ocr_page(
+                        filename, number, language=ocr_language, workdir=root,
+                    )
+                except PDFExtractionError:
+                    ocr_failures += 1
+                    warnings.append("pdf_page_ocr_failed")
+                else:
+                    if ocr_text:
+                        text = ocr_text
+                        method = "ocr_tesseract"
+                        ocr_used += 1
+                        warnings.append("ocr_text_unverified")
+                    else:
+                        warnings.append("pdf_page_ocr_returned_no_text")
             if not text:
                 warnings.append("pdf_page_without_usable_text")
             if text and text_parts:
@@ -168,6 +182,8 @@ def extract_pdf_document(
             "document_pages_processed": limit,
             "document_pages": pages,
             "ocr_page_count": ocr_used,
+            "ocr_attempt_count": ocr_attempts,
+            "ocr_failure_count": ocr_failures,
             "document_truncated": limit < page_count,
             "extraction_quality_score": 0.5 if ocr_used else 0.8,
             "publication_date_basis": "unconfirmed",

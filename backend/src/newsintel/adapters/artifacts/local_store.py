@@ -71,6 +71,12 @@ def _atomic_write(destination: Path, body: bytes) -> None:
     tmp = filesystem_path.with_name(f".{filesystem_path.name}.{uuid4().hex}.tmp")
     try:
         tmp.write_bytes(body)
-        os.replace(tmp, filesystem_path)
+        try:
+            # An atomic hard link publishes a complete snapshot without ever
+            # replacing a prior artifact, even across competing workers.
+            os.link(tmp, filesystem_path)
+        except FileExistsError:
+            if filesystem_path.read_bytes() != body:
+                raise FileExistsError("raw artifact already exists with different bytes") from None
     finally:
         tmp.unlink(missing_ok=True)

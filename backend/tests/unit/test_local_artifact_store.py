@@ -60,3 +60,21 @@ async def test_local_pdf_artifact_retains_original_pdf_bytes(tmp_path) -> None:
 
     stored_path = Path(url2pathname(urlsplit(artifact.artifact_uri).path))
     assert stored_path.read_bytes() == body
+
+
+@pytest.mark.asyncio
+async def test_local_pdf_snapshot_never_overwrites_existing_evidence(tmp_path) -> None:
+    store = LocalRawArtifactStore(tmp_path)
+    candidate_id = uuid7()
+    time = datetime(2026, 10, 30, tzinfo=UTC)
+    await store.save_raw_pdf(
+        candidate_id=candidate_id, body=b"%PDF-original",
+        body_sha256="d" * 64, retrieved_at=time,
+    )
+    with pytest.raises(FileExistsError, match="different bytes"):
+        await store.save_raw_pdf(
+            candidate_id=candidate_id, body=b"%PDF-tampered",
+            body_sha256="d" * 64, retrieved_at=time,
+        )
+    saved = tmp_path / "2026/10/30" / str(candidate_id) / ("d" * 64 + ".pdf")
+    assert saved.read_bytes() == b"%PDF-original"

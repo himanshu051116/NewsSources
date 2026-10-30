@@ -153,3 +153,23 @@ def test_real_tesseract_ocr_from_rendered_pdf_page() -> None:
     assert result.extraction_method == "pdf_pages_with_ocr"
     assert "Agency" in result.text_content
     assert result.metadata["document_pages"][0]["ocr_unverified"]
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler is unavailable")
+def test_failed_ocr_does_not_discard_existing_native_text(monkeypatch) -> None:
+    def broken_ocr(*args, **kwargs):
+        raise document_pdf.PDFExtractionError("OCR package missing")
+
+    monkeypatch.setattr(document_pdf, "_ocr_page", broken_ocr)
+    result = document_pdf.extract_pdf_document(
+        sample_pdf(second=False),
+        base_url="https://publisher.example/native-plus-ocr.pdf",
+        min_native_chars=999,
+        ocr_enabled=True,
+    )
+    assert result.text_content == FIRST
+    assert result.metadata["ocr_attempt_count"] == 1
+    assert result.metadata["ocr_failure_count"] == 1
+    assert result.metadata["document_pages"][0]["extraction_method"] == "pdf_native_text"
+    assert "pdf_page_ocr_failed" in result.warnings
