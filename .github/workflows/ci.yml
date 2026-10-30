@@ -42,6 +42,33 @@ jobs:
         run: uv run ruff check --select E9,F821,F822,F823 backend/src backend/tests scripts
       - run: uv run python -m compileall -q backend/src backend/tests backend/migrations
       - run: uv run alembic -c backend/alembic.ini upgrade head
-      - run: uv run pytest -q
+      - name: Create dedicated PostgreSQL integration test database
+        run: |
+          uv run python - <<'PY'
+          import asyncio
+          import asyncpg
+
+          async def prepare() -> None:
+              conn = await asyncpg.connect(
+                  host="127.0.0.1",
+                  database="newsintel",
+                  user="newsintel",
+                  password="newsintel-ci",
+              )
+              try:
+                  await conn.execute("CREATE DATABASE newsintel_audit_ci")
+              finally:
+                  await conn.close()
+
+          asyncio.run(prepare())
+          PY
+      - name: Migrate dedicated PostgreSQL integration database
+        env:
+          NEWSINTEL_DATABASE_URL: postgresql+asyncpg://newsintel:newsintel-ci@127.0.0.1:5432/newsintel_audit_ci
+        run: uv run alembic -c backend/alembic.ini upgrade head
+      - name: Run unit and PostgreSQL integration tests
+        env:
+          NEWSINTEL_TEST_DATABASE_URL: postgresql+asyncpg://newsintel:newsintel-ci@127.0.0.1:5432/newsintel_audit_ci
+        run: uv run pytest -q
       - run: uv run python scripts/release-integrity.py
       - run: docker build -t news-intelligence:${{ github.sha }} .
