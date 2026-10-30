@@ -72,3 +72,22 @@ jobs:
         run: uv run pytest -q
       - run: uv run python scripts/release-integrity.py
       - run: docker build -t news-intelligence:${{ github.sha }} .
+
+  windows-unit:
+    name: Windows compatibility
+    runs-on: windows-latest
+    env:
+      NEWSINTEL_ENVIRONMENT: test
+      UV_DEFAULT_INDEX: https://pypi.org/simple
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install locked Windows dependencies
+        run: uv sync --all-extras --locked
+      - name: Run Windows unit and long-path regression tests
+        run: uv run pytest -q backend/tests/unit
