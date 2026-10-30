@@ -113,10 +113,16 @@ one publisher and scan quality is necessary for a meaningful accuracy claim.
 - Evaluate a consented or openly licensed *real* reference corpus with the
   local harness. The synthetic one-page Hindi and table fixtures only prove
   that the code path works; they do not establish reliability on news sources.
+- Linux PDF subprocesses now fail closed if `prlimit` is unavailable, and
+  enforce per-process address-space (1 GiB), CPU (60 seconds), output-file
+  (16 MiB) and core-dump (zero) kernel limits in addition to wall-clock
+  timeouts. Docker installs util-linux. Windows does not yet enforce equivalent
+  kernel limits. These controls **do not** isolate processes from the network.
 - Perform an independent adversarial-PDF review and run converters in
-  a resource-restricted OS/container sandbox (CPU, RAM, filesystem, process
-  count and network disabled). Python subprocess timeout alone is not a
-  complete sandbox. Validate patched Poppler/Tesseract packages.
+  a separate restricted sandbox/container (network disabled, CPU/RAM/disk,
+  process count, OS seccomp and filesystem controls). Per-process rlimits
+  reduce resource exhaustion but are not a complete sandbox. Validate
+  patched Poppler/Tesseract packages.
 - Test inaccessible/slow/multi-column PDFs, failed native extraction,
   malformed streams, low-resolution screenshots, large reports, rotated scans
   and permission-protected documents; review failure logging and retries.

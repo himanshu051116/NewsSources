@@ -7,7 +7,9 @@ existing SSRF- and size-limited crawler fetcher.
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
+import sys
 import time
 from tempfile import TemporaryFile
 from datetime import datetime
@@ -34,6 +36,17 @@ def _run(
         remaining = min(remaining, deadline - time.monotonic())
         if remaining <= 0:
             raise PDFExtractionError("PDF document processing time budget exhausted")
+    # prlimit imposes kernel-enforced per-process CPU, address space, output
+    # file size and core limits. Do not use preexec_fn in threaded worker code.
+    # Linux deployments must supply prlimit; Windows has no equivalent here.
+    if sys.platform.startswith("linux"):
+        limiter = shutil.which("prlimit")
+        if limiter is None:
+            raise PDFExtractionError("Linux PDF converter requires prlimit utility")
+        command = [
+            limiter, "--as=1073741824", "--cpu=60", "--fsize=16777216",
+            "--core=0", "--", *command,
+        ]
     try:
         with TemporaryFile(mode="w+b") as output, TemporaryFile(mode="w+b") as errors:
             result = subprocess.run(

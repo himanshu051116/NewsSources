@@ -271,3 +271,37 @@ def test_pdf_partial_page_limit_never_receives_full_capture_quality() -> None:
     assert result.metadata["document_requires_review"] is True
     assert "pdf_page_limit_reached" in result.metadata["document_review_reasons"]
     assert result.metadata["extraction_quality_score"] <= 0.3
+
+
+def test_linux_pdf_converters_apply_kernel_resource_limits(monkeypatch) -> None:
+    import sys
+    import subprocess
+    from unittest.mock import patch
+
+    if not sys.platform.startswith("linux"):
+        pytest.skip("Linux per-process resource limits")
+    commands = []
+
+    def fake_run(cmd, **kwargs):
+        commands.append(cmd)
+        kwargs["stdout"].write(b"bounded output")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(document_pdf.shutil, "which", lambda name: "/usr/bin/prlimit")
+    monkeypatch.setattr(document_pdf.subprocess, "run", fake_run)
+    assert document_pdf._run(["pdftotext", "source.pdf"], timeout=5) == b"bounded output"
+    command, = commands
+    assert command[:2] == ["/usr/bin/prlimit", "--as=1073741824"]
+    assert "--cpu=60" in command
+    assert "--fsize=16777216" in command
+    assert command[-2:] == ["pdftotext", "source.pdf"]
+
+
+def test_linux_missing_prlimit_fails_closed(monkeypatch) -> None:
+    import sys
+
+    if not sys.platform.startswith("linux"):
+        pytest.skip("Linux per-process resource limits")
+    monkeypatch.setattr(document_pdf.shutil, "which", lambda name: None)
+    with pytest.raises(document_pdf.PDFExtractionError, match="requires prlimit"):
+        document_pdf._run(["pdfinfo", "file.pdf"], timeout=5)
