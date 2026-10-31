@@ -1,29 +1,26 @@
 # NewsSources
 
-**A local news-research workspace for following a story back to its sources.**
+NewsSources is a local news-research application for collecting articles, retaining their revisions, grouping coverage of the same event, and reviewing claims against stored material. The reader, source-management interface and analyst workflows run on a FastAPI backend.
 
-A headline is not a complete record of an event. The same report can be republished under several titles, figures change as an incident develops, and a claim repeated by multiple outlets may still trace back to one original statement. NewsSources is an attempt to make those relationships inspectable.
+The project is designed for source tracing and editorial research. An article citation records where a statement came from; it does not establish whether that statement is true or independently confirmed.
 
-The application collects reporting, preserves article revisions, groups possible reports of the same event, and gives an analyst a place to examine claims alongside their source material and earlier coverage. It is **not** an automatic truth detector or a replacement for editorial judgment.
+## What is implemented
 
-> **Release status:** `main` contains the v1.25 application. The [reliability changes (PR #1)](https://github.com/himanshu051116/NewsSources/pull/1) and [PDF/OCR work (PR #2)](https://github.com/himanshu051116/NewsSources/pull/2) remain draft work **not released on `main`**. Passing automated tests is not a newsroom accuracy certificate.
+| Area | Available workflow |
+| --- | --- |
+| Source acquisition | Register publishers; discover feed, sitemap and page channels; inspect polling and extraction outcomes. |
+| Article records | Store URLs, capture/publication times, extracted text and successive article versions. |
+| Event review | Inspect proposed links between articles, including potential duplicates and later corrections. |
+| Claims and evidence | Review extracted claims, cited passages, source lineage and unresolved or conflicting evidence. |
+| Historical research | Search stored earlier coverage and configured archive/retrieval providers. |
+| PDF documents | Extract bounded per-page text; retain page references and partial-extraction warnings. Scanned-page Hindi/English OCR is opt-in. |
+| Analyst workspace | Save investigations, notes, searches and evidence-linked briefings. |
 
-## What the application actually does
+PDF table rows and OCR text are marked for review, not accepted as verified facts. Page anchors identify extraction locations rather than independent corroboration.
 
-| Stage | Output an analyst can inspect | Important limitation |
-| --- | --- | --- |
-| Source discovery | Publisher registry, feed/sitemap channels and polling records | Discovery is constrained by robots rules, publisher structure and time windows. |
-| Article capture | Extracted text, canonical URL, timestamps and immutable article versions | Extracted text can be incomplete; it does not prove the report is true. |
-| Event grouping | Candidate same-event links with matching signals | Similar names, places or numbers can cause incorrect merges. |
-| Claims and evidence | Claim candidates, source lineage, retrieval attempts and review states | A citation to the originating article is **not independent corroboration**. |
-| Historical research | Earlier stored reporting, article revisions and configured archive-provider results | Available history depends on what has been collected or can be retrieved. |
-| Analyst workspace | Investigations, saved searches, notes and source-linked briefings | Human review is required before publishing a finding. |
+## Run locally on Windows
 
-Two editorial rules guide the design: **preserve the original wording** and **make uncertainty visible**. A document location, an extraction-confidence signal and a factual-verification judgment are different things; the interface should not collapse them into one confidence score.
-
-## Try it locally
-
-The documented first-run path targets **Windows, PowerShell, Python 3.12–3.14 and Docker Desktop**.
+Prerequisites: **Python 3.12–3.14 (64-bit), Docker Desktop and PowerShell**. Run from a checkout:
 
 ```powershell
 git clone https://github.com/himanshu051116/NewsSources.git
@@ -33,14 +30,16 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\run-platform.ps1 start
 ```
 
-Once the API and workers have started:
+Open the local tools:
 
-- **News reader:** http://127.0.0.1:8010/news
-- **Publisher setup:** http://127.0.0.1:8010/news-sources
-- **Historical research:** http://127.0.0.1:8010/historical-research
-- **API documentation:** http://127.0.0.1:8010/docs
+| Page | Address |
+| --- | --- |
+| Reader | http://127.0.0.1:8010/news |
+| Source operations | http://127.0.0.1:8010/news-sources |
+| Historical research | http://127.0.0.1:8010/historical-research |
+| API reference | http://127.0.0.1:8010/docs |
 
-Useful commands:
+Diagnostics and shutdown:
 
 ```powershell
 .\scripts\run-platform.ps1 status
@@ -48,50 +47,49 @@ Useful commands:
 .\scripts\run-platform.ps1 stop
 ```
 
-This runs local services; it does **not** automatically provide an indexed, verified news corpus. Source onboarding and background extraction must succeed for articles to appear. For first-run troubleshooting, see [Windows setup](SETUP-WINDOWS.md).
+See [Windows setup](SETUP-WINDOWS.md) for troubleshooting and [the production runbook](PRODUCTION-RUNBOOK.md) for deployment requirements. Starting the local services does not automatically populate the database with news articles; sources must be configured and successfully fetched.
 
-## A typical investigation
+## Investigation workflow
 
-1. **Add a publisher** using Source Operations and inspect which feed or sitemap channels were actually accepted.
-2. **Read the fetched article**, paying attention to source URL, publication time, extraction warnings and whether the article is complete.
-3. **Inspect an event dossier** for related reports, then check for duplicates, syndicated reporting and later corrections.
-4. **Examine a claim** against its quoted passage, other retrieved evidence and earlier versions; leave it unresolved when evidence is insufficient.
-5. **Save the investigation** with notes and references. A generated briefing is a research aid, not a publish-ready fact-check.
+1. Register a publisher, review the discovered channels and check fetch outcomes.
+2. Open an article record and compare extracted text with its source URL and timestamps.
+3. Inspect related-event candidates; separate duplicate or syndicated reports from independent coverage.
+4. Review claims against source passages and earlier versions. Keep unclear claims unresolved.
+5. Save the investigation, including source references and any correction history.
 
-An example failure case worth testing: two outlets quote the same press release about a new government policy. Treating the two articles as independent confirmations would overstate the evidence. The lineage model is intended to make this visible; its effectiveness must still be evaluated.
+The [fictional editorial case](examples/README.md) illustrates a shared original notice, derivative reports and a corrected figure. It is a worked example, not a collected news story.
 
-For a concrete example, follow the [fictional correction-and-source-lineage investigation](examples/README.md). It shows why two reports repeating the same official notice are not two independent confirmations.
-
-## How the code is organized
+## Repository layout
 
 ```text
 backend/src/newsintel/
-  adapters/          # fetching, source discovery, HTML extraction, provider integrations
-  application/       # article processing, research, search and workspace workflows
-  domain/            # event matching, claim/evidence logic, revision and quality rules
-  infrastructure/    # SQLAlchemy persistence, database jobs and repositories
-  api/               # FastAPI routes and reader pages
-  workers/           # poller, articles, enrichment, briefing and background jobs
-backend/migrations/  # ordered Alembic schema revisions
-backend/tests/       # unit and integration tests; constructed fixtures are identified
-config/              # candidate sources for operator-reviewed onboarding
-qa/                  # local replay and runtime checks
-docs/                # architecture, operating guidance and historical engineering notes
+  adapters/          # acquisition, extraction and external providers
+  application/       # article, search and workspace workflows
+  domain/            # event, claim and evidence rules
+  infrastructure/    # persistence and database access
+  api/               # HTTP endpoints and reader pages
+  workers/           # polling, extraction and background tasks
+backend/migrations/  # Alembic database revisions
+backend/tests/       # unit and integration tests
+config/              # publisher candidate configuration
+qa/                  # replay, audit and evaluation commands
+docs/                # current technical guides and archived design notes
 ```
 
-PostgreSQL is the canonical structured store. Optional services (object storage, vector search and browser rendering) are configured separately; they should not be confused with required infrastructure for every local run.
+PostgreSQL holds structured records. Object storage, vector search and browser rendering are separately configured components; see the setup and architecture documentation for their respective requirements.
 
-## Data is not automatically ground truth
+## Data and evaluation
 
-- [Candidate source pack](config/README.md): real publisher URLs included for *manual onboarding review*. Their current response, robots policy, permissions and retention rights are **not certified** by inclusion in a JSON file.
-- [Event-pair fixture card](backend/tests/fixtures/accuracy/README.md): 20 **constructed** positive and hard-negative pairs used for regression tests. They are not a labeled news corpus or an independently adjudicated accuracy benchmark.
-- [Data and evaluation notes](docs/DATA_AND_EVALUATION.md): what is reproducible, what is illustrative, and what would be needed to claim real-world performance.
+- [Source configuration](config/README.md): candidate publisher endpoints that still require individual availability, terms, robots and retention review before use.
+- [Event-pair test fixtures](backend/tests/fixtures/accuracy/README.md): 20 constructed same-event/different-event pairs used for regression testing, not independently labeled reporting.
+- [Event corpus workflow](docs/EVENT_CORPUS_WORKFLOW.md): an offline admission tool for permissioned article captures, capture hashes, independent review and train/test separation.
+- [Provenance and evaluation notes](docs/DATA_AND_EVALUATION.md): how publisher records, captured content and test examples are distinguished.
 
-These distinctions matter more than an impressive but unsupported accuracy percentage. The evaluation code can calculate metrics; representative ground-truth sets and analyst review must supply the evidence.
+The repository does not ship a representative, independently reviewed real-world accuracy benchmark. The existing evaluator can score an appropriately collected and labeled corpus.
 
 ## Development checks
 
-After completing local bootstrap:
+After local bootstrap:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest backend/tests/unit
@@ -99,22 +97,15 @@ After completing local bootstrap:
 .\scripts\services.ps1 doctor
 ```
 
-PostgreSQL integration tests, S3-compatible storage checks, release integrity and container builds run in CI for the relevant development branches. A green CI run shows that its particular checks passed, not that live ingestion or editorial quality is proven.
+CI also runs PostgreSQL integration tests, Windows checks, S3-compatible storage tests, release integrity and a Docker build. [The latest merged `main` workflow](https://github.com/himanshu051116/NewsSources/actions/runs/41177697695) passed these configured checks on 31 October 2026.
 
-## Current limitations and work in progress
+## Known limitations
 
-- Publisher-specific markup changes can reduce extraction quality; review original pages.
-- Claims, dates and event identity remain sensitive to ambiguity, conflicting sources and corrections.
-- No broad multilingual editorial accuracy claim is established by the constructed regression fixtures.
-- Long-term archive completeness and publisher content usage rights need source-by-source checks.
-- Production launch requires live ingestion, security, backup/restore and human quality trials.
-- Bounded PDF extraction, scanned-document OCR, page-level provenance and related review controls are **proposed in draft PR #2**, not advertised as shipped on `main`.
+- Publisher markup and feed availability change; acquisition needs source-by-source monitoring.
+- Event matching and claim review can be wrong when reports share names, locations, numbers or an original information source.
+- OCR quality, PDF tables and page citations need independent review on varied real documents.
+- A production deployment requires verified publisher permissions, authentication, backup/restore testing and extended live-source trials. See [current project status](docs/STATUS.md).
 
-## Reference material
+## Further reading
 
-- [Current development status](docs/STATUS.md) · [Fictional investigation example](examples/README.md)
-- [Editorial benchmark admission](docs/EVENT_CORPUS_WORKFLOW.md) · [Documentation guide](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Acquisition](docs/ACQUISITION_ARCHITECTURE.md) · [Historical providers](docs/HISTORICAL_RESEARCH.md)
-- [Deployment runbook](PRODUCTION-RUNBOOK.md) · [Windows setup](SETUP-WINDOWS.md)
-- [Engineering review and historical releases](docs/archive/README.md) — earlier audit and version documents are retained as records, not presented as proof of current production readiness.
-
-Maintained in [himanshu051116/NewsSources](https://github.com/himanshu051116/NewsSources). Improvements should include a reproducible case, a test or data example, and a clear statement of what was and was not verified.
+[Documentation index](docs/README.md) · [System architecture](docs/ARCHITECTURE.md) · [Acquisition design](docs/ACQUISITION_ARCHITECTURE.md) · [Historical research](docs/HISTORICAL_RESEARCH.md) · [Engineering history](docs/archive/README.md)

@@ -33,7 +33,7 @@ The [event corpus workflow](EVENT_CORPUS_WORKFLOW.md) documents `qa/editorial_be
 
 For defensible editorial claims, assemble a permissioned corpus with archived source URLs, capture times, publisher revision snapshots, rights/retention notes, annotator instructions, independent double review and disagreement adjudication. Split by event and source lineage to avoid train/test leakage. Report **event linking**, **extraction fidelity**, **citation location**, **factual adjudication** and **abstention** separately.
 
-PDF/OCR benchmarks belong to the draft PDF branch. Synthetic page fixtures validate code paths; they cannot substitute for varied scans, complex layouts, Hindi glyph quality, table transcription and verified citation labels.
+PDF extraction and opt-in OCR are included on `main`, along with local evaluation tools. Synthetic page fixtures validate code paths; they cannot substitute for varied scans, complex layouts, Hindi glyph quality, table transcription and verified citation labels.
 
 Never present locally reconstructed QA HTML, screenshots or synthetic fixtures as verbatim source documents.
 

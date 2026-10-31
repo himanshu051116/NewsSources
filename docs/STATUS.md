@@ -1,38 +1,38 @@
-# Project status and next steps
+# Project status
 
-_Last editorial status review: 31 October 2026. This is a repository-state summary, not a production readiness certificate._
+**Repository check: 31 October 2026.** This page describes the code on `main`, not the operational state of any deployed instance.
 
-## What is on `main`
+## Merged work
 
-The default branch is the v1.25 application. It includes a local reader, publisher/feed discovery, article versioning, event candidates, claim and evidence review, historical lookup, workspace features, and background processing workers. These are implemented modules; they do not imply a populated production news archive or independently measured factual accuracy.
+The package identifies itself as `1.25.0` in `pyproject.toml`. The following development changes were merged into `main` on 31 October 2026; merging them did not deploy a production service or independently establish newsroom accuracy.
 
-- **Usable entry points:** `/news`, `/news-sources`, `/historical-research`, `/docs` on the local API (see [Windows setup](../SETUP-WINDOWS.md)).
-- **Primary datastore:** PostgreSQL. Optional configurations add object storage, vector retrieval and isolated browser rendering.
-- **Development posture:** extensive automated tests and local QA workflows exist, but live acceptance and representative editorial benchmarking remain separate requirements.
+| Work | Merged review |
+| --- | --- |
+| Artifact persistence, source-lineage safeguards, revision-history checks and reproducible CI | [PR #1](https://github.com/himanshu051116/NewsSources/pull/1) |
+| Bounded PDF text extraction, opt-in English/Hindi OCR, source-page references and review-only tables | [PR #2](https://github.com/himanshu051116/NewsSources/pull/2) |
+| README, publisher-review metadata, fixture provenance and archived engineering notes | [PR #3](https://github.com/himanshu051116/NewsSources/pull/3) |
+| Technical documentation index and implementation-history archive | [PR #4](https://github.com/himanshu051116/NewsSources/pull/4) |
+| Permissioned event-pair corpus admission and integrity checks | [PR #5](https://github.com/himanshu051116/NewsSources/pull/5) |
 
-## Proposed changes under review
+**Verification:** the merge head `757423bea3463d74df7e98db05b7c55bf04e855c` passed the [GitHub Actions workflow on `main`](https://github.com/himanshu051116/NewsSources/actions/runs/41177697695) (Linux/PostgreSQL, Windows, S3-compatible persistence and Docker build). These tests cover the checked code paths, not live publisher performance.
 
-| Change | Branch / review | Shipping status |
-| --- | --- | --- |
-| Evidence storage integrity, revision history and reproducible CI | [PR #1](https://github.com/himanshu051116/NewsSources/pull/1) | Draft, not merged into `main` |
-| PDF acquisition, page provenance, optional English/Hindi OCR and review flags | [PR #2](https://github.com/himanshu051116/NewsSources/pull/2) | Draft, depends on PR #1 |
-| Engineering-facing repository presentation, source/fixture provenance and examples | [PR #3](https://github.com/himanshu051116/NewsSources/pull/3) | Draft, depends on PR #1 |
+## Local entry points
 
-Do not equate a green test run on a draft feature branch with the functionality present on `main`.
+- Reader: `http://127.0.0.1:8010/news`
+- Source operations: `http://127.0.0.1:8010/news-sources`
+- Historical research: `http://127.0.0.1:8010/historical-research`
+- FastAPI documentation: `http://127.0.0.1:8010/docs`
 
-## Work still needed for a credible newsroom pilot
+See [Windows setup](../SETUP-WINDOWS.md) for local start/stop instructions.
 
-1. **Publisher trials:** explicitly approved sources, rights and retention decisions, feed availability, publication-to-capture latency, article completeness, retry behavior and failure rates.
-2. **Editorial evaluation:** independently labeled same-event and different-event pairs, source-lineage conflicts, version corrections and source-location checks. The bundled 20 event pairs are constructed regression cases only.
-3. **PDF/OCR validation:** independently transcribed English/Hindi documents and scanned pages, table/citation adjudication and isolation tests for hostile PDFs before enabling wider PDF acquisition.
-4. **Operations:** production auth, backups and restore drill, durable storage, incident runbook, observability and extended acceptance runs.
-5. **Reader review:** accessibility, mobile/browser usability, correction visibility and explicit separation of extraction confidence from factual verification.
+## Not yet established
 
-## Where evidence belongs
+- **Publisher operations:** approved source terms and retention, measured feed availability, capture latency and article completeness.
+- **Editorial quality:** independently labeled event pairs, citation correctness, corrections, abstention behavior and review of shared-source claims.
+- **PDF/OCR performance:** accuracy on varied scanned English/Hindi pages, tables, damaged PDFs and verified page anchors.
+- **Operational readiness:** authentication, access reviews, backup/restore drills, security controls, observability and live-source acceptance trials.
+- **Production deployment:** no deployment is inferred from a merge or a passing CI run.
 
-- [Data provenance and evaluation](DATA_AND_EVALUATION.md)
-- [Fictional editor walkthrough](../examples/README.md)
-- [Production runbook and acceptance procedure](../PRODUCTION-RUNBOOK.md)
-- [Older 12 October 2026 planning assessment](archive/reviews/2026-10-12-platform-assessment.md)
+## Reference material
 
-When the project crosses a gate, update this file with a dated link to a reproducible test, human evaluation or deployment record. Avoid replacing measurements with broad production-readiness statements.
+[Data and evaluation](DATA_AND_EVALUATION.md) · [Event corpus protocol](EVENT_CORPUS_WORKFLOW.md) · [Fictional editorial case](../examples/README.md) · [Runbook](../PRODUCTION-RUNBOOK.md) · [Historical assessment](archive/reviews/2026-10-12-platform-assessment.md)
