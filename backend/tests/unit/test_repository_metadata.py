@@ -14,6 +14,14 @@ def test_candidate_source_pack_is_explicitly_unverified() -> None:
     assert pack["review"]["last_reviewed_at"] is None
     assert len(pack["sources"]) == len({row["name"] for row in pack["sources"]})
     assert all(row["review_status"] == "manual_check_required" for row in pack["sources"])
+    reviews = [row["review_metadata"] for row in pack["sources"]]
+    assert len({item["source_key"] for item in reviews}) == len(reviews)
+    assert all(item["retention_approved"] is False for item in reviews)
+    assert all(item["last_http_check_at"] is None for item in reviews)
+    guardian = [item for item in reviews if item["publisher_group"] == "theguardian.com"]
+    assert len(guardian) == 2
+    sebi = next(item for item in reviews if item["source_key"] == "sebi-announcements")
+    assert sebi["endpoint_kind"] == "html_listing_candidate"
 
 
 def test_constructed_event_pair_labels_are_not_presented_as_fact_checks() -> None:

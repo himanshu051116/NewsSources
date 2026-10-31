@@ -29,6 +29,8 @@ This directory holds **historical development notes** moved out of the repositor
 
 ## Engineering reviews
 
+- [2026-10-12-platform-assessment](reviews/2026-10-12-platform-assessment.md) — historical roadmap at v1.22
+
 - [2026-10-23-brief-selection](reviews/2026-10-23-brief-selection.md)
 - [2026-10-23-publisher-fetching](reviews/2026-10-23-publisher-fetching.md)
 - [2026-10-23-runtime-bugs](reviews/2026-10-23-runtime-bugs.md)

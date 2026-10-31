@@ -11,7 +11,19 @@
       ],
       "retention_guidance": "primary-authority",
       "review_status": "manual_check_required",
-      "selection_note": "Government English-language release channel (candidate RSS endpoint)"
+      "selection_note": "Government English-language release channel (candidate RSS endpoint)",
+      "review_metadata": {
+        "source_key": "pib-releases-en",
+        "publisher_group": "pib.gov.in",
+        "expected_language": "en",
+        "source_category": "government_release",
+        "endpoint_kind": "rss_candidate",
+        "last_http_check_at": null,
+        "last_robots_review_at": null,
+        "last_terms_review_at": null,
+        "retention_approved": false,
+        "reviewed_by": null
+      }
     },
     {
       "name": "Press Information Bureau - Hindi",
@@ -22,7 +34,19 @@
       ],
       "retention_guidance": "primary-authority",
       "review_status": "manual_check_required",
-      "selection_note": "Government Hindi-language release channel (candidate RSS endpoint)"
+      "selection_note": "Government Hindi-language release channel (candidate RSS endpoint)",
+      "review_metadata": {
+        "source_key": "pib-releases-hi",
+        "publisher_group": "pib.gov.in",
+        "expected_language": "hi",
+        "source_category": "government_release",
+        "endpoint_kind": "rss_candidate",
+        "last_http_check_at": null,
+        "last_robots_review_at": null,
+        "last_terms_review_at": null,
+        "retention_approved": false,
+        "reviewed_by": null
+      }
     },
     {
       "name": "The Guardian - World",
@@ -33,7 +57,19 @@
       ],
       "retention_guidance": "review-publisher-terms",
       "review_status": "manual_check_required",
-      "selection_note": "Commercial publisher world section; publisher terms and rights must be reviewed"
+      "selection_note": "Commercial publisher world section; publisher terms and rights must be reviewed",
+      "review_metadata": {
+        "source_key": "guardian-world",
+        "publisher_group": "theguardian.com",
+        "expected_language": "en",
+        "source_category": "news_publisher",
+        "endpoint_kind": "rss_candidate",
+        "last_http_check_at": null,
+        "last_robots_review_at": null,
+        "last_terms_review_at": null,
+        "retention_approved": false,
+        "reviewed_by": null
+      }
     },
     {
       "name": "The Guardian - Technology",
@@ -44,7 +80,19 @@
       ],
       "retention_guidance": "review-publisher-terms",
       "review_status": "manual_check_required",
-      "selection_note": "Same publisher as Guardian World; section feeds do not make independent sources"
+      "selection_note": "Same publisher as Guardian World; section feeds do not make independent sources",
+      "review_metadata": {
+        "source_key": "guardian-technology",
+        "publisher_group": "theguardian.com",
+        "expected_language": "en",
+        "source_category": "news_publisher",
+        "endpoint_kind": "rss_candidate",
+        "last_http_check_at": null,
+        "last_robots_review_at": null,
+        "last_terms_review_at": null,
+        "retention_approved": false,
+        "reviewed_by": null
+      }
     },
     {
       "name": "SEBI - Press Releases",
@@ -55,7 +103,19 @@
       ],
       "retention_guidance": "primary-authority",
       "review_status": "manual_check_required",
-      "selection_note": "Regulator announcement listing; HTML page rather than a confirmed RSS feed"
+      "selection_note": "Regulator announcement listing; HTML page rather than a confirmed RSS feed",
+      "review_metadata": {
+        "source_key": "sebi-announcements",
+        "publisher_group": "sebi.gov.in",
+        "expected_language": "en",
+        "source_category": "regulatory_listing",
+        "endpoint_kind": "html_listing_candidate",
+        "last_http_check_at": null,
+        "last_robots_review_at": null,
+        "last_terms_review_at": null,
+        "retention_approved": false,
+        "reviewed_by": null
+      }
     }
   ],
   "review": {

@@ -23,6 +23,15 @@ def check() -> None:
         seen.add(source["name"])
         assert source["review_status"] == "manual_check_required"
         assert source.get("manual_endpoints"), "missing source endpoint"
+        review = source["review_metadata"]
+        assert review["source_key"] and review["publisher_group"]
+        assert review["expected_language"] in {"en", "hi"}
+        assert review["endpoint_kind"] in {"rss_candidate", "html_listing_candidate"}
+        assert review["last_http_check_at"] is None
+        assert review["last_robots_review_at"] is None
+        assert review["last_terms_review_at"] is None
+        assert review["retention_approved"] is False
+        assert review["reviewed_by"] is None
         for address in [source["website_url"], *source["manual_endpoints"]]:
             parsed = urlsplit(address)
             assert parsed.scheme == "https" and parsed.hostname, "invalid source URL"

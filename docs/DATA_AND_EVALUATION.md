@@ -32,3 +32,7 @@ For defensible editorial claims, assemble a permissioned corpus with archived so
 PDF/OCR benchmarks belong to the draft PDF branch. Synthetic page fixtures validate code paths; they cannot substitute for varied scans, complex layouts, Hindi glyph quality, table transcription and verified citation labels.
 
 Never present locally reconstructed QA HTML, screenshots or synthetic fixtures as verbatim source documents.
+
+## Publisher selection and audit notes
+
+The source pack now includes distinct `source_key` values, language expectations, endpoint-type hints and explicitly uncompleted HTTP/robots/terms checks. These fields make onboarding review auditable **as documentation only**; the crawler does not use them to grant rights or bypass any policy.
