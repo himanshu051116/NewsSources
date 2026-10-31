@@ -4,6 +4,39 @@ NewsSources is a local news-research application for collecting articles, retain
 
 The project is designed for source tracing and editorial research. An article citation records where a statement came from; it does not establish whether that statement is true or independently confirmed.
 
+## Processing flow
+
+This is the main path from a discovered URL to an analyst's investigation. Failures and incomplete extraction are recorded rather than silently treated as successful articles.
+
+```mermaid
+flowchart TB
+    A["Publisher feeds, sitemaps, websites and document links"]
+    B["Source registry, URL frontier and scheduled collection"]
+    C{"Response format"}
+    D["HTML article extraction"]
+    E["PDF page text and optional OCR"]
+    F["Normalize, deduplicate and retain revisions"]
+    G[("PostgreSQL: articles, metadata and provenance")]
+    H["Event matching, historical context and claim review"]
+    I["FastAPI: search, filtering and source access"]
+    J["News reader and analyst workspace"]
+    K["Monitoring: failures, warnings and eligible retries"]
+
+    A --> B --> C
+    C -->|HTML| D --> F
+    C -->|PDF| E --> F
+    F --> G
+    G --> H --> I
+    G --> I
+    I <--> J
+    B -.->|fetch error| K
+    D -.->|extraction issue| K
+    E -.->|OCR or page warning| K
+    K -.->|retry policy| B
+```
+
+See the [pipeline walkthrough](docs/PIPELINE_OVERVIEW.md) for the quality gates, storage boundaries and background-worker behavior. PDF/OCR output and source links are reviewable evidence locations, not factual verification.
+
 ## What is implemented
 
 | Area | Available workflow |

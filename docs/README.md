@@ -1,10 +1,11 @@
 # Documentation guide
 
-Use the live [project status](STATUS.md) to see which parts of NewsSources are shipped on `main` and which are still in draft branches. Older engineering notes record design decisions at the time they were written; they are **not** the current release contract.
+Use [project status](STATUS.md) for the features currently merged into `main` and the remaining evaluation work. Older engineering notes record design decisions at the time they were written; they are **not** the current release contract.
 
 | Question | Start here |
 | --- | --- |
 | What is built, and what is not? | [Current project status](STATUS.md) |
+| What is the end-to-end data flow? | [Pipeline overview](PIPELINE_OVERVIEW.md) |
 | How do articles reach the database? | [Acquisition architecture](ACQUISITION_ARCHITECTURE.md) |
 | Why is an article grouped with an event? | [Event identity and evidence architecture](EVENT_INTELLIGENCE_ARCHITECTURE.md) |
 | What stores article revisions and lineage? | [System architecture](ARCHITECTURE.md) |
