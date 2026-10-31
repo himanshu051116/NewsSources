@@ -1,0 +1,94 @@
+# PDF ingestion: bounded native extraction + optional OCR
+
+This feature is built on the `upgrade/v1.26-reliability` branch and is
+reviewed independently in draft PR #2. It does not enable user uploads.
+
+## Acquisition and safety
+
+Discovered recent `.pdf` URLs pass the normal article freshness policy,
+then use the existing SSRF-protected, robots-aware, size-limited HTTP fetcher.
+Actual PDF signatures and MIME types are checked before extraction. A
+publisher PDF response is **not** processed as HTML, and browser rendering
+and HTML-specific fidelity analysis are skipped.
+
+Native text extraction uses Poppler (`pdfinfo`, `pdftotext`). When enabled,
+Tesseract OCR is used for pages with very little native text; `pdftoppm`
+rasterizes these pages. All CLI calls use argument arrays, fixed subprocess
+timeouts and temporary working directories, with limits on pages, bytes and
+page output. Converter output is spooled to temporary files rather than
+accumulated without limits in memory. Extracted text is limited to one
+million characters, and a document-wide deadline bounds subprocess time.
+Failed and missing OCR tools do not silently invent document text.
+
+## Configuration
+
+- `NEWSINTEL_PDF_MAX_PAGES=40` — at most this many PDF pages are extracted.
+  The original page count and truncation warning are preserved.
+- `NEWSINTEL_PDF_OCR_ENABLED=false` — OCR **off** by default. Set to
+  `true` only if scanned PDF extraction is intentionally required.
+- `NEWSINTEL_PDF_OCR_LANGUAGE=eng+hin` — when OCR is intentionally enabled,
+  use both English and Hindi recognition on the provided Docker image; set
+  `eng` on hosts without the Hindi model. OCR remains disabled by default.
+- `NEWSINTEL_FETCH_MAX_BYTES=8000000` — shared HTTP byte cap; PDF
+  extraction also enforces this size.
+- `NEWSINTEL_PDF_MAX_OCR_PAGES=6` — OCR at most six pages per document;
+  remaining pages keep available native text and receive an explicit warning.
+- `NEWSINTEL_PDF_PROCESSING_TIMEOUT_SECONDS=75` — an overall converter
+  deadline, below the default 120-second worker lease; slow fetch and
+  persistence can still consume additional time.
+
+The Docker image includes Poppler, Tesseract and English/Hindi language
+packages. Linux CI installs the same conversion binaries. Windows native PDF
+tests skip when the external programs are not installed.
+
+## Evidence and provenance
+
+Each article version stores `document_pages` in JSONB metadata, and the
+article-version API exposes it. Every processed page includes its 1-based
+page number, a `#page=N` URL, start/end character offsets into the
+stored concatenated text, SHA-256 of page text, and extraction method.
+PDF extraction warnings also mark the article processing stage `partial`
+(including truncation, missing pages, failed OCR and review-required OCR),
+rather than silently recording a clean `extracted` stage. The extracted
+text remains available for investigation with its limitations visible.
+
+A separate `document_text_page_ratio` reports the share of *processed*
+pages with extracted text (not all original pages). Missing-text pages,
+truncation, failed OCR and OCR-unverified material set review flags and
+lower the capture-quality signal; neither metric is an accuracy score or
+probability that an extracted claim is true.
+
+OCR page records explicitly say `ocr_unverified=true`; they must be
+human-reviewed before use as conclusive evidence. The Linux test runner now
+installs the Hindi Tesseract model and tests recognition of a scanned
+Devanagari page. This is synthetic, not a representative multi-publisher
+accuracy benchmark.
+
+For the first six pages, a separate `pdftotext -layout` pass identifies
+**potential** multi-column numeric tables. The `document_table_candidates`
+API field preserves the raw layout lines and split cells. Every table
+candidate has `review_required=true` and `verified_table=false` because
+whitespace-based layout heuristics are not reliable enough to promote
+numbers into checked claims. Original article text and page offsets remain
+unchanged.
+
+Claims now also receive an optional `document_provenance` anchor in their
+extraction features and originating evidence metadata. The anchor is assigned
+only when the **original source sentence** matches exactly (allowing layout
+whitespace variation) on a single page whose text SHA-256 is valid. Duplicated
+sentences, unknown page offsets, and unmatched paraphrases receive **no
+automatic page attribution**. An anchor carries source URL, page number,
+character offsets, original page hash, OCR uncertainty, and
+`independent_confirmation=false`. It establishes where a claim was extracted,
+not whether the publisher's statement is true.
+
+## Limits not yet solved
+
+- Long or large documents beyond the configured cap are explicitly truncated.
+- Extraction of tables, graphics, handwriting and complex multi-column layout
+  is not fully reliable; validate against representative publisher PDFs.
+- OCR confidence is not calibrated. It does not establish factual truth.
+- Historical archive backfill and user-upload PDFs need separate admission
+  and permissions flows.
+- Page anchors in claim metadata are extraction provenance, not a verified
+  quotation or independent corroboration of the claim.

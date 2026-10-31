@@ -473,3 +473,106 @@ async def test_browser_renderer_is_opt_in_and_replaces_materially_better_extract
     persisted = repository.successes[0][1]
     assert persisted.word_count == 180
     assert persisted.metadata["browser_rendered"] is True
+
+
+@pytest.mark.asyncio
+async def test_pdf_fetch_is_routed_away_from_html_and_stored_as_pdf(monkeypatch) -> None:
+    from dataclasses import replace
+    from hashlib import sha256
+
+    from newsintel.adapters.artifacts.local_store import RawFetchArtifact
+
+    repository = FakeRepository()
+    url = "https://example.com/reports/ministerial-update.pdf"
+    body = b"%PDF-1.4\nminimal placeholder\n"
+    response = replace(
+        fetched(), requested_url=url, final_url=url, body=body,
+        body_sha256=sha256(body).hexdigest(),
+        headers={"content-type": "application/pdf"},
+    )
+    pdf = replace(
+        extracted(), title="Ministerial report", byline=None, language=None,
+        published_at=None, canonical_url=url, extraction_method="pdf_native_pages",
+        metadata={"document_pages": [{
+            "page": 1, "char_start": 0, "char_end": 36,
+            "source_url": url + "#page=1",
+        }], "extraction_quality_score": 0.8},
+    )
+    monkeypatch.setattr(
+        "newsintel.application.articles.processing.extract_pdf_document",
+        lambda payload, **kwargs: pdf,
+    )
+    snapshot = RawFetchArtifact(
+        artifact_uri="s3://test/raw-html/report.pdf", storage_backend="s3",
+        sha256=sha256(body).hexdigest(), byte_size=len(body),
+    )
+    store = type("FakeStore", (), {})()
+    store.save_raw_pdf = AsyncMock(return_value=snapshot)
+    store.save_raw_html = AsyncMock()
+    processor = ArticleProcessor(
+        repository=repository,
+        fetcher=FakeFetcher(response),
+        extractor=lambda *_a, **_kw: pytest.fail("HTML extractor must not run for PDFs"),
+        raw_artifact_store=store,
+    )
+    result = await processor.process(
+        candidate(url=url, published_at=datetime.now(UTC)),
+        worker_id="pdf-test",
+    )
+    assert result.created_version
+    assert repository.successes[0][1].extraction_method == "pdf_native_pages"
+    assert repository.successes[0][1].published_at is not None
+    store.save_raw_pdf.assert_awaited_once()
+    store.save_raw_html.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "warning",
+    [
+        "pdf_page_limit_reached",
+        "pdf_page_without_usable_text",
+        "pdf_ocr_page_budget_reached",
+        "pdf_page_ocr_failed",
+        "pdf_page_ocr_returned_no_text",
+        "pdf_table_layout_inspection_failed",
+        "ocr_text_unverified",
+        "manual_ocr_review_recommended",
+    ],
+)
+async def test_pdf_uncertainty_records_partial_stage_not_clean_extracted(monkeypatch, warning) -> None:
+    from dataclasses import replace
+    from hashlib import sha256
+
+    repo = FakeRepository()
+    url = "https://example.com/reports/extraction-review.pdf"
+    body = b"%PDF-1.4\\nfixture\\n"
+    fetched_result = replace(
+        fetched(), requested_url=url, final_url=url, body=body,
+        headers={"content-type": "application/pdf"},
+        body_sha256=sha256(body).hexdigest(),
+    )
+    pdf = replace(
+        extracted(), canonical_url=url, published_at=None,
+        extraction_method="pdf_native_pages",
+        metadata={"extraction_quality_score": 0.3,
+                  "document_requires_review": True},
+        warnings=(warning,),
+    )
+    monkeypatch.setattr(
+        "newsintel.application.articles.processing.extract_pdf_document",
+        lambda *_args, **_kwargs: pdf,
+    )
+    processor = ArticleProcessor(
+        repository=repo, fetcher=FakeFetcher(fetched_result),
+        extractor=lambda *_a, **_kw: pytest.fail("HTML extractor on PDF"),
+    )
+    result = await processor.process(
+        candidate(url=url, published_at=datetime.now(UTC)),
+        worker_id="pdf-review",
+    )
+    assert result.created_version
+    assert ArticleProcessingStage.PARTIAL in repo.stages
+    assert ArticleProcessingStage.EXTRACTED not in repo.stages
+    assert not repo.failures
+

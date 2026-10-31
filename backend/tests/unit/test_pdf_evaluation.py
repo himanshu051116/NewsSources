@@ -1,0 +1,279 @@
+"""Auditable PDF evaluation metrics and an actual offline CLI round trip."""
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from newsintel.domain.intelligence.pdf_evaluation import (
+    aggregate_table_counts,
+    aggregate_text_counts,
+    citation_counts,
+    table_cell_counts,
+    text_error_counts,
+    edit_distance,
+)
+
+
+def _one_page_pdf(text: str) -> bytes:
+    cmd = f"BT /F1 12 Tf 72 720 Td ({text}) Tj ET".encode("ascii")
+    stream = (
+        b"<< /Length " + str(len(cmd)).encode()
+        + b" >>\nstream\n" + cmd + b"\nendstream"
+    )
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+        b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        stream,
+    ]
+    data = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for n, obj in enumerate(objects, 1):
+        offsets.append(len(data))
+        data.extend(f"{n} 0 obj\n".encode() + obj + b"\nendobj\n")
+    xref = len(data)
+    data.extend(f"xref\n0 {len(offsets)}\n0000000000 65535 f \n".encode())
+    for offset in offsets[1:]:
+        data.extend(f"{offset:010} 00000 n \n".encode())
+    data.extend(
+        f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\n"
+        f"startxref\n{xref}\n%%EOF\n".encode()
+    )
+    return bytes(data)
+
+
+def test_unicode_metrics_have_valid_error_denominators() -> None:
+    exact = text_error_counts("भारत सरकार", "भारत सरकार")
+    partial = text_error_counts("भारत सरकार", "भारत")
+    assert exact["character_errors"] == 0
+    assert exact["word_errors"] == 0
+    assert partial["word_errors"] == 1
+    aggregate = aggregate_text_counts([exact, partial])
+    assert aggregate["evaluated_pages"] == 2
+    assert 0 < aggregate["character_error_rate"] < 1
+    assert aggregate["word_error_rate"] == 0.25
+    with pytest.raises(ValueError):
+        text_error_counts("  ", "hallucination")
+
+
+def test_table_cell_metrics_penalize_wrong_number_and_missing_row() -> None:
+    gold = [["District", "Count", "Total"], ["Delhi", "31", "11"],
+            ["Bhopal", "27", "7"]]
+    predicted = [["District", "Count", "Total"], ["Delhi", "13", "11"]]
+    one = table_cell_counts(gold, predicted)
+    assert one == {"reference_cells": 9, "predicted_cells": 6, "correct_cells": 5}
+    report = aggregate_table_counts([one])
+    assert report["cell_precision"] == 5 / 6
+    assert report["cell_recall"] == 5 / 9
+
+
+
+def test_table_cell_metrics_reject_malformed_and_unbounded_inputs() -> None:
+    with pytest.raises(ValueError, match="table cells must contain text"):
+        table_cell_counts([["District", 23]], [["District", "23"]])
+    with pytest.raises(ValueError, match="table rows must be lists"):
+        table_cell_counts([["District"]], ["District"])
+    with pytest.raises(ValueError, match="exceeds 20000 cells"):
+        table_cell_counts([["value"]], [["value"] * 20001])
+    with pytest.raises(ValueError, match="exceeds 20000 cells"):
+        table_cell_counts([["value"] * 20001], [["value"]])
+    assert table_cell_counts([["भारत", "१२"]], [["भारत", "१२"]])["correct_cells"] == 2
+
+
+def test_citation_metrics_distinguish_false_anchor_and_correct_abstention() -> None:
+    result = citation_counts([
+        {"expected_page": 2, "predicted_page": 2},
+        {"expected_page": 3, "predicted_page": 1},
+        {"expected_page": 4, "predicted_page": None},
+        {"expected_page": None, "predicted_page": None},
+    ])
+    assert result["correct"] == 1
+    assert result["wrong"] == 1
+    assert result["missed_anchors"] == 1
+    assert result["correct_abstentions"] == 1
+    assert result["citation_precision"] == 0.5
+    assert result["citation_recall"] == 1 / 3
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler conversion tools absent")
+def test_cli_scores_labeled_local_pdf_and_never_promotes_synthetic_to_real(tmp_path) -> None:
+    text = "Officials reported 31 incidents during June 2026."
+    filename = tmp_path / "report.pdf"
+    filename.write_bytes(_one_page_pdf(text))
+    manifest = tmp_path / "gold.json"
+    manifest.write_text(json.dumps({
+        "dataset_name": "single-page smoke case",
+        "dataset_type": "synthetic",
+        "documents": [{
+            "id": "sample",
+            "pdf_path": "report.pdf",
+            "source_url": "https://publisher.example/report.pdf",
+            "pages": [{"page": 1, "expected_text": text}],
+            "citations": [
+                {"source_sentence": text, "expected_page": 1},
+                {"source_sentence": "Unmentioned claim", "expected_page": None},
+            ],
+        }],
+    }), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    output = tmp_path / "report.json"
+    proc = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--output", str(output)],
+        capture_output=True, text=True, check=True, timeout=90,
+    )
+    assert proc.returncode == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["not_a_real_world_benchmark"] is True
+    assert result["text"]["character_error_rate"] == 0
+    assert result["text"]["word_error_rate"] == 0
+    assert result["citations"]["citation_precision"] == 1
+    assert result["citations"]["correct_abstentions"] == 1
+    assert result["documents_evaluated"] == 1
+    assert result["tables"]["false_table_candidates"] is None
+    assert result["tables"]["fully_labeled_table_documents"] == 0
+    passing = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-character-error-rate", "0", "--min-citation-precision", "1",
+         "--max-wrong-citations", "0"],
+        capture_output=True, text=True, timeout=90, check=True,
+    )
+    assert json.loads(passing.stdout)["quality_gates"]["passed"] is True
+    bad_reference = json.loads(manifest.read_text(encoding="utf-8"))
+    bad_reference["documents"][0]["pages"][0]["expected_text"] += " Extra"
+    manifest.write_text(json.dumps(bad_reference), encoding="utf-8")
+    failing = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-character-error-rate", "0"],
+        capture_output=True, text=True, timeout=90, check=False,
+    )
+    assert failing.returncode == 1
+    assert json.loads(failing.stdout)["quality_gates"]["passed"] is False
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler conversion tools absent")
+def test_table_false_positive_gate_requires_complete_ground_truth(tmp_path) -> None:
+    pdf = tmp_path / "one.pdf"
+    pdf.write_bytes(_one_page_pdf("A report without any detected table."))
+    manifest = tmp_path / "gold.json"
+    entry = {
+        "dataset_type": "synthetic",
+        "documents": [{
+            "id": "no-table", "pdf_path": pdf.name, "pages": [{
+                "page": 1, "expected_text": "A report without any detected table.",
+            }],
+        }],
+    }
+    manifest.write_text(json.dumps(entry), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    rejected = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-false-table-candidates", "0"],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert rejected.returncode != 0
+    assert "no complete ground-truth coverage" in rejected.stderr
+    entry["documents"][0]["tables_fully_annotated"] = True
+    manifest.write_text(json.dumps(entry), encoding="utf-8")
+    accepted = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-false-table-candidates", "0"],
+        capture_output=True, text=True, check=True, timeout=90,
+    )
+    report = json.loads(accepted.stdout)
+    assert report["tables"]["false_table_candidates"] == 0
+    assert report["tables"]["fully_labeled_table_documents"] == 1
+
+
+def test_exact_edit_distance_matches_reference_dp_on_small_unicode_strings() -> None:
+    from itertools import product
+
+    def baseline(a: str, b: str) -> int:
+        row = list(range(len(b) + 1))
+        for i, left in enumerate(a, 1):
+            nxt = [i]
+            for j, right in enumerate(b, 1):
+                nxt.append(min(nxt[-1] + 1, row[j] + 1, row[j-1] + (left != right)))
+            row = nxt
+        return row[-1]
+
+    samples = ["".join(x) for n in range(4) for x in product("भaइ", repeat=n)]
+    for a in samples:
+        for b in samples:
+            assert edit_distance(a, b) == baseline(a, b)
+    assert edit_distance(["भारत", "सरकार"], ["भारत", "योजना"]) == 1
+
+
+def test_bounded_full_page_edit_distance() -> None:
+    phrase = "भारत सरकार " * 800
+    changed = phrase[:400] + "X" + phrase[401:]
+    assert edit_distance(phrase, changed) == 1
+    with pytest.raises(ValueError, match="exceeds 20000"):
+        edit_distance("a" * 20001, "b" * 20001)
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler tools absent")
+def test_blank_page_gold_counts_unexpected_text_and_source_hash(tmp_path) -> None:
+    pdf = tmp_path / "one.pdf"
+    pdf.write_bytes(_one_page_pdf("Visual report with printed text."))
+    manifest = tmp_path / "gold.json"
+    data = {"dataset_type": "synthetic", "documents": [{
+        "id": "blank-negative", "pdf_path": pdf.name,
+        "pages": [{"page": 1, "expected_text": ""}],
+    }]}
+    manifest.write_text(json.dumps(data), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-hallucinated-blank-pages", "0"],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert report["labeling"]["hallucinated_blank_pages"] == 1
+    assert report["labeling"]["labeled_page_coverage"] == 1.0
+    assert len(report["documents"][0]["document_sha256"]) == 64
+    data["documents"][0]["pages"].append({"page": 1, "expected_text": ""})
+    manifest.write_text(json.dumps(data), encoding="utf-8")
+    duplicate = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest)],
+        capture_output=True, text=True, check=False, timeout=90,
+    )
+    assert duplicate.returncode != 0
+    assert "duplicate labeled page" in duplicate.stderr
+
+
+@pytest.mark.skipif(not shutil.which("pdftotext") or not shutil.which("pdfinfo"),
+                    reason="Poppler tools absent")
+def test_true_blank_page_counts_correct_abstention(tmp_path) -> None:
+    pdf = tmp_path / "empty.pdf"
+    pdf.write_bytes(_one_page_pdf(""))
+    manifest = tmp_path / "gold.json"
+    manifest.write_text(json.dumps({
+        "dataset_type": "synthetic",
+        "documents": [{
+            "id": "true-blank", "pdf_path": pdf.name,
+            "pages": [{"page": 1, "expected_text": " "}],
+        }],
+    }), encoding="utf-8")
+    script = Path(__file__).resolve().parents[3] / "scripts" / "pdf-evaluate.py"
+    run = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest),
+         "--max-hallucinated-blank-pages", "0",
+         "--min-labeled-page-coverage", "1"],
+        capture_output=True, text=True, check=True, timeout=90,
+    )
+    report = json.loads(run.stdout)
+    assert report["labeling"]["blank_pages_correct"] == 1
+    assert report["labeling"]["hallucinated_blank_pages"] == 0
+    assert report["text"] is None

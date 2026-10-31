@@ -1,6 +1,6 @@
 FROM python:3.13-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libpq5 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libpq5 poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin util-linux && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY backend ./backend

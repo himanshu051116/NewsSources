@@ -653,3 +653,99 @@ async def test_busy_week_digest_samples_across_days_and_keeps_quality_metadata(p
     daily = await service.edition(DigestRequest(full_stream=True, as_of=end))
     assert daily.eligible_reports == 20
     assert daily.selected_days == 1
+
+
+@pytest.mark.asyncio
+async def test_pdf_page_provenance_survives_storage_and_article_api(persistence):
+    """Persist source-page offsets and expose them from the same article-version API."""
+    from newsintel.application.articles.query_service import ArticleQueryService
+    from hashlib import sha256
+
+    factory, _, _ = persistence
+    repository = SqlAlchemyArticleProcessingRepository(factory)
+    candidate, = await repository.lease_due_candidates(
+        worker_id="pdf-page-test", limit=1, lease_seconds=120,
+    )
+    now = datetime.now(UTC)
+    run = await repository.start_fetch(
+        candidate_id=candidate.id, worker_id="pdf-page-test",
+        trace_id=uuid4(), started_at=now, lease_version=candidate.lease_version,
+    )
+    url = candidate.normalized_url
+    pdf_bytes = b"%PDF-1.4\n%%EOF\n"
+    text = "Officials said 31 people were injured in an incident on June 5, 2026."
+    pages = [{
+        "page": 1, "source_url": url + "#page=1",
+        "char_start": 0, "char_end": len(text),
+        "extraction_method": "pdf_native_text",
+        "ocr_unverified": False,
+        "text_sha256": sha256(text.encode("utf-8")).hexdigest(),
+    }]
+    table_candidates = [{
+        "page": 1, "source_url": url + "#page=1",
+        "layout_method": "pdftotext_layout_whitespace_heuristic",
+        "review_required": True, "verified_table": False,
+        "header_cells": ["District", "Cases", "Reports"],
+        "rows": [{"source_line_number": 1, "raw_text": "District  Cases  Reports",
+                  "cells": ["District", "Cases", "Reports"]}],
+        "truncated": False,
+    }]
+    extracted = ExtractedArticle(
+        title="Inspection report", byline=None,
+        published_at=now, modified_at=None, language=None,
+        canonical_url=url, text_content=text,
+        content_sha256=sha256(text.encode("utf-8")).hexdigest(),
+        extraction_method="pdf_native_pages", metadata={
+            "document_type": "application/pdf",
+            "document_page_count": 1,
+            "document_pages_processed": 1,
+            "document_truncated": False,
+            "document_pages_with_text": 1,
+            "document_pages_without_text": 0,
+            "document_text_page_ratio": 1.0,
+            "document_requires_review": False,
+            "document_review_reasons": [],
+            "document_pages": pages,
+            "document_table_candidates": table_candidates,
+            "document_table_review_required": True,
+            "extraction_quality_score": 0.8,
+            "word_count": len(text.split()),
+        }, warnings=(),
+    )
+    fetched = FetchResult(
+        requested_url=url, final_url=url, status_code=200,
+        headers={"content-type": "application/pdf"}, body=pdf_bytes,
+        body_sha256=sha256(pdf_bytes).hexdigest(), retrieved_at=now, redirect_chain=(),
+    )
+    result = await repository.complete_success(
+        candidate=candidate, run=run, fetched=fetched,
+        extracted=extracted, raw_artifact=None, completed_at=now,
+    )
+    detail = await ArticleQueryService(factory).get_article(result.article_id)
+    assert detail is not None and detail.latest_version is not None
+    assert detail.latest_version.document_page_count == 1
+    assert detail.latest_version.document_pages_with_text == 1
+    assert detail.latest_version.document_pages_without_text == 0
+    assert detail.latest_version.document_text_page_ratio == 1.0
+    assert detail.latest_version.document_requires_review is False
+    assert detail.latest_version.document_pages == pages
+    assert detail.latest_version.document_table_candidates == table_candidates
+    assert detail.latest_version.document_table_review_required is True
+    assert detail.latest_version.text_content == text
+    claims = await ArticleQueryService(factory).get_article_claims(result.article_id)
+    assert claims is not None and len(claims) >= 1
+    anchored = [
+        claim for claim in claims
+        if "document_provenance" in claim.extraction_features
+    ]
+    assert anchored
+    origin = anchored[0].extraction_features["document_provenance"]
+    assert origin["page"] == 1
+    assert detail.latest_version.text_content[origin["char_start"]:origin["char_end"]] == text
+    assert origin["independent_confirmation"] is False
+    assert any(
+        link.metadata.get("document_provenance") == origin
+        and link.independence_score == 0.0
+        for link in anchored[0].evidence_links
+    )
+

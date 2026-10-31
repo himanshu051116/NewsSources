@@ -1545,6 +1545,41 @@ def _version_view(version: ArticleVersionModel) -> ArticleVersionView:
         extraction_fidelity_discrepancies=_extraction_fidelity_discrepancies(version),
         browser_rendered=bool(version.metadata_.get("browser_rendered")),
         raw_artifact_uri=_raw_artifact_uri(version),
+        document_pages=_dict_list(version.metadata_.get("document_pages")),
+        document_table_candidates=_dict_list(
+            version.metadata_.get("document_table_candidates")
+        ),
+        document_table_review_required=bool(
+            version.metadata_.get("document_table_review_required")
+        ),
+        document_page_count=(
+            version.metadata_.get("document_page_count")
+            if isinstance(version.metadata_.get("document_page_count"), int)
+            else None
+        ),
+        document_truncated=bool(version.metadata_.get("document_truncated")),
+        document_pages_with_text=(
+            version.metadata_.get("document_pages_with_text")
+            if isinstance(version.metadata_.get("document_pages_with_text"), int)
+            else None
+        ),
+        document_pages_without_text=(
+            version.metadata_.get("document_pages_without_text")
+            if isinstance(version.metadata_.get("document_pages_without_text"), int)
+            else None
+        ),
+        document_text_page_ratio=(
+            float(version.metadata_["document_text_page_ratio"])
+            if isinstance(version.metadata_.get("document_text_page_ratio"), (int, float))
+            else None
+        ),
+        document_requires_review=bool(version.metadata_.get("document_requires_review")),
+        document_review_reasons=(
+            [str(value) for value in version.metadata_.get("document_review_reasons", [])
+             if isinstance(value, str)]
+            if isinstance(version.metadata_.get("document_review_reasons"), list)
+            else []
+        ),
         word_count=_word_count(version),
         text_content=version.text_content,
         created_at=version.created_at,
