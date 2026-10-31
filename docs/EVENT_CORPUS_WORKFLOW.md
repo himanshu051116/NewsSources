@@ -27,7 +27,7 @@ python qa/editorial_benchmark.py --manifest evaluation/private/event-pairs.json 
 newsintel-event-benchmark --input evaluation/results/event-pairs-for-benchmark.json --json > evaluation/results/event-scoring.json
 ```
 
-The exported file contains captured article texts: keep it private and respect source rights. The gate audits **all manifest cases** for leakage, but `--split test` exports only held-out cases. The existing scorer consumes all exported cases, so never report unfiltered train/dev/test results as held-out accuracy.
+The exported file contains captured article texts: keep it private and respect source rights. The exporter refuses overwrites, avoids clobbering its input manifest, and restricts real-source exports inside the repository to the ignored `evaluation/results/` directory. A metadata-only report records the manifest and export SHA-256 hashes, but does not certify factual accuracy or publication rights. The gate audits **all manifest cases** for leakage, but `--split test` exports only held-out cases. The existing scorer consumes all exported cases, so never report unfiltered train/dev/test results as held-out accuracy.
 
 Run a fictional smoke test (not real-world performance):
 

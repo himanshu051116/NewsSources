@@ -152,3 +152,47 @@ def test_malformed_field_types_fail_closed_without_tracebacks(tmp_path: Path) ->
         assert result.returncode == 2
         assert "Traceback" not in result.stderr
 
+
+def test_refuses_overwrite_and_manifest_clobber(tmp_path: Path) -> None:
+    manifest = _manifest()
+    existing = tmp_path / "existing.json"
+    existing.write_text("unchanged", encoding="utf-8")
+    result = _run(tmp_path, manifest, "--report", str(existing))
+    assert result.returncode == 2 and "already exists" in result.stderr
+    assert existing.read_text(encoding="utf-8") == "unchanged"
+    result = _run(tmp_path, manifest, "--report", str(tmp_path / "manifest.json"))
+    assert result.returncode == 2 and "input manifest" in result.stderr
+    assert json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8")) == manifest
+
+
+def test_same_report_and_export_destination_is_rejected(tmp_path: Path) -> None:
+    dest = tmp_path / "collision.json"
+    result = _run(tmp_path, _manifest(), "--allow-synthetic-export",
+                  "--report", str(dest), "--export", str(dest))
+    assert result.returncode == 2 and "different files" in result.stderr
+    assert not dest.exists()
+
+
+def test_export_hash_and_metadata_only_summary(tmp_path: Path) -> None:
+    import hashlib
+    report_path, export_path = tmp_path / "report.json", tmp_path / "export.json"
+    result = _run(tmp_path, _manifest(), "--allow-synthetic-export",
+                  "--split", "test", "--report", str(report_path),
+                  "--export", str(export_path))
+    assert result.returncode == 0, result.stderr
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["manifest_sha256"]
+    assert report["real_world_accuracy_certified"] is False
+    assert report["export_case_count"] == 1
+    assert report["export_sha256"] == hashlib.sha256(export_path.read_bytes()).hexdigest()
+    assert "left_text" not in report_path.read_text(encoding="utf-8")
+
+
+def test_real_source_export_is_restricted_within_repository(tmp_path: Path) -> None:
+    from qa.editorial_benchmark import ManifestError, _preflight_output
+    import pytest
+    with pytest.raises(ManifestError, match="evaluation/results"):
+        _preflight_output(ROOT / "docs" / "public-export.json",
+                          manifest=tmp_path / "manifest.json", real_export=True)
+    _preflight_output(ROOT / "evaluation" / "results" / "new-private-export.json",
+                      manifest=tmp_path / "manifest.json", real_export=True)

@@ -232,6 +232,38 @@ def prepare(manifest: Path) -> tuple[dict[str, object], list[dict[str, object]]]
     return report, export
 
 
+def _preflight_output(path: Path, *, manifest: Path, real_export: bool) -> None:
+    """Refuse to overwrite an input or publish full real-source captures."""
+    resolved = path.resolve()
+    if resolved == manifest.resolve():
+        raise ManifestError("output path must not be the input manifest")
+    if path.exists() or path.is_symlink():
+        raise ManifestError(f"output already exists (will not overwrite): {path}")
+    if real_export:
+        repo = Path(__file__).resolve().parents[1]
+        safe = repo / "evaluation" / "results"
+        if resolved.is_relative_to(repo) and not resolved.is_relative_to(safe):
+            raise ManifestError("real capture exports inside the repo require evaluation/results/")
+
+
+def _write_new_outputs(outputs: list[tuple[Path, str]]) -> None:
+    """Create output files exclusively; roll back on a write failure."""
+    created: list[Path] = []
+    try:
+        for path, content in outputs:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as stream:
+                created.append(path)
+                stream.write(content)
+    except OSError:
+        for path in reversed(created):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+        raise
+
+
 def run() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, type=Path)
@@ -254,12 +286,24 @@ def run() -> int:
                 raise ManifestError("requested split contains no cases")
             report["export_split"] = args.split or "all"
             report["export_case_count"] = len(selected)
-        if args.report:
-            args.report.parent.mkdir(parents=True, exist_ok=True)
-            args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        if args.export:
-            args.export.parent.mkdir(parents=True, exist_ok=True)
-            args.export.write_text(json.dumps(selected, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        report["manifest_sha256"] = hashlib.sha256(args.manifest.read_bytes()).hexdigest()
+        report["validation_scope"] = "local_hash_and_metadata_checks_only"
+        report["real_world_accuracy_certified"] = False
+        outputs: list[tuple[Path, str]] = []
+        if args.export is not None:
+            exported = json.dumps(selected, indent=2, ensure_ascii=False) + "\n"
+            report["export_sha256"] = hashlib.sha256(exported.encode("utf-8")).hexdigest()
+            outputs.append((args.export, exported))
+        if args.report is not None:
+            outputs.append((args.report, json.dumps(report, indent=2) + "\n"))
+        if args.report is not None and args.export is not None and (
+            args.report.resolve() == args.export.resolve()
+        ):
+            raise ManifestError("--report and --export must use different files")
+        for path, _content in outputs:
+            _preflight_output(path, manifest=args.manifest,
+                              real_export=path == args.export and report["dataset_kind"] == "real")
+        _write_new_outputs(outputs)
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0
     except (ManifestError, OSError) as exc:
