@@ -47,8 +47,8 @@ def _timestamp(value: object, field: str) -> str:
 
 def _https_url(value: object, field: str, *, real: bool) -> str:
     raw = _required_text(value, field)
-    parts = urlsplit(raw)
     try:
+        parts = urlsplit(raw)
         invalid = (parts.scheme != "https" or not parts.hostname or parts.username
                    or parts.password or parts.port not in (None, 443))
     except ValueError as exc:
@@ -131,7 +131,7 @@ def _final_label(raw: object, field: str) -> str:
             raise ManifestError(f"{field}: reviewers must be different")
         ids.add(reviewer)
         label = review.get("label")
-        if label not in ALLOWED_LABELS:
+        if not isinstance(label, str) or label not in ALLOWED_LABELS:
             raise ManifestError(f"{field}: reviewer label must be 'same' or 'different'")
         labels.append(label)
     adjudication = raw.get("adjudication")
@@ -145,7 +145,7 @@ def _final_label(raw: object, field: str) -> str:
     if adjudicator in ids:
         raise ManifestError(f"{field}: adjudicator must be independent")
     result = adjudication.get("label")
-    if result not in ALLOWED_LABELS:
+    if not isinstance(result, str) or result not in ALLOWED_LABELS:
         raise ManifestError(f"{field}.adjudication: missing final event label")
     return result
 
@@ -161,7 +161,7 @@ def prepare(manifest: Path) -> tuple[dict[str, object], list[dict[str, object]]]
     if not isinstance(doc, dict):
         raise ManifestError("manifest must be a JSON object")
     kind = doc.get("dataset_kind")
-    if kind not in {"real", "synthetic"}:
+    if not isinstance(kind, str) or kind not in {"real", "synthetic"}:
         raise ManifestError("dataset_kind must be 'real' or 'synthetic'")
     real = kind == "real"
     dataset = _required_text(doc.get("dataset_id"), "dataset_id")
@@ -187,7 +187,7 @@ def prepare(manifest: Path) -> tuple[dict[str, object], list[dict[str, object]]]
             raise ManifestError(f"{where}: duplicate case_key {case_key}")
         seen_ids.add(case_key)
         split = raw.get("split")
-        if split not in ALLOWED_SPLITS:
+        if not isinstance(split, str) or split not in ALLOWED_SPLITS:
             raise ManifestError(f"{where}.split: use train, dev or test")
         group = _required_text(raw.get("event_group_key"), f"{where}.event_group_key")
         left = _capture(raw.get("left"), f"{where}.left", path.parent, real=real)
