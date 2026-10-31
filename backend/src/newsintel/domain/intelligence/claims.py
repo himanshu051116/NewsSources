@@ -35,7 +35,7 @@ class ClaimType(StrEnum):
     OTHER_FACTUAL = "other_factual"
 
 
-_SENTENCE_BOUNDARY_PATTERN = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'])")
+_SENTENCE_BOUNDARY_PATTERN = re.compile(r"(?<=[.!?।])\s+(?=[A-Z0-9\"'\u0900-\u097F])")
 _WHITESPACE_PATTERN = re.compile(r"\s+")
 _NUMBER_PATTERN = re.compile(
     r"(?<!\w)(?P<currency>₹|\$|€|£|INR\s*|USD\s*|EUR\s*|GBP\s*)?"

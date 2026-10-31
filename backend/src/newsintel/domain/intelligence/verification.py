@@ -42,6 +42,7 @@ def verify_from_evidence(
     """Aggregate already-classified evidence without double-counting syndicated lineages."""
 
     usable = [item for item in evidence if item.stance is not EvidenceStance.ORIGIN]
+    mixed_lineages = _mixed_stance_lineages(usable)
     deduplicated = _deduplicate_lineages(usable)
     support = _weight(deduplicated, {EvidenceStance.SUPPORT})
     contradict = _weight(deduplicated, {EvidenceStance.CONTRADICT})
@@ -54,7 +55,11 @@ def verify_from_evidence(
     )
     independent_count = sum(item.independence_score > 0 for item in deduplicated)
 
-    if primary_contradict and contradict >= 0.6:
+    if mixed_lineages:
+        label = ClaimVerificationLabel.DISPUTED
+        confidence = 0.60
+        conclusion = "Same-lineage supporting and contradicting passages require review."
+    elif primary_contradict and contradict >= 0.6:
         label = ClaimVerificationLabel.CONTRADICTED
         confidence = min(1.0, 0.72 + 0.18 * contradict)
         conclusion = "Primary or highly independent evidence contradicts the claim."
@@ -93,6 +98,7 @@ def verify_from_evidence(
             "contradict_weight": round(contradict, 4),
             "dispute_weight": round(dispute, 4),
             "independent_lineage_count": independent_count,
+            "mixed_stance_lineage_count": len(mixed_lineages),
             "primary_support_present": primary_support,
             "primary_contradiction_present": primary_contradict,
             "retrieval_complete": retrieval_complete,
@@ -108,6 +114,20 @@ def verify_from_evidence(
             ),
         },
     )
+
+
+def _mixed_stance_lineages(evidence: list[VerificationEvidence]) -> set[str]:
+    """Retain conflicting source passages without counting copies as independent."""
+    grouped: dict[str, set[EvidenceStance]] = {}
+    for index, item in enumerate(evidence):
+        if _effective_weight(item) < 0.25:
+            continue
+        key = item.lineage_key or f"anonymous:{index}"
+        grouped.setdefault(key, set()).add(item.stance)
+    return {
+        key for key, stances in grouped.items()
+        if EvidenceStance.SUPPORT in stances and EvidenceStance.CONTRADICT in stances
+    }
 
 
 def _deduplicate_lineages(

@@ -4,12 +4,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_HEAD = "0033_grounded_news_explainer"
+EXPECTED_HEAD = "0034_article_revision_history"
 
 
 def main() -> int:
@@ -40,6 +41,9 @@ def main() -> int:
     checks["lock_project_version"] = lock_project_version
     if lock_project_version != project_version:
         failures.append("uv.lock editable project version does not match pyproject")
+    checks["lock_uses_private_package_index"] = "packages.applied-caas-gateway" in lock_text
+    if checks["lock_uses_private_package_index"]:
+        failures.append("uv.lock references an unavailable private package index")
 
     schema_text = (ROOT / "backend/src/newsintel/core/schema.py").read_text(encoding="utf-8")
     schema_match = re.search(r'EXPECTED_SCHEMA_REVISION\s*=\s*["\']([^"\']+)["\']', schema_text)
@@ -53,18 +57,35 @@ def main() -> int:
     if not migration.is_file():
         failures.append(f"expected migration is missing: {EXPECTED_HEAD}")
 
+    # CI creates __pycache__ during compileall and pytest; only committed artifacts
+    # are release integrity defects, not generated files in the test workspace.
+    try:
+        tracked_raw = subprocess.check_output(
+            ["git", "ls-files", "-z"], cwd=ROOT, stderr=subprocess.DEVNULL,
+        )
+        tracked_paths = [Path(item.decode("utf-8", errors="replace"))
+                         for item in tracked_raw.split(b"\0") if item]
+    except (OSError, subprocess.CalledProcessError):
+        failures.append("cannot inspect tracked release files (git ls-files failed)")
+        tracked_paths = []
     forbidden = []
-    for path in ROOT.rglob("*"):
-        rel = path.relative_to(ROOT)
+    for rel in tracked_paths:
         if any(part in {"__pycache__", ".pytest_cache"} for part in rel.parts):
             forbidden.append(str(rel))
-        elif path.is_file() and path.suffix == ".pyc":
-            forbidden.append(str(rel))
-        elif path.is_file() and path.name in {"structlog.py", "asyncpg.py"}:
+        elif rel.suffix == ".pyc" or rel.name in {"structlog.py", "asyncpg.py"}:
             forbidden.append(str(rel))
     checks["forbidden_artifacts"] = sorted(set(forbidden))
     if forbidden:
-        failures.append("release tree contains caches, bytecode, or dependency validation shims")
+        failures.append("tracked release contains caches, bytecode, or dependency shims")
+    required_python_modules = [
+        "backend/src/newsintel/adapters/artifacts/local_store.py",
+        "backend/src/newsintel/adapters/artifacts/s3_store.py",
+    ]
+    missing_python_modules = [path for path in required_python_modules
+                              if not (ROOT / path).is_file()]
+    checks["missing_python_modules"] = missing_python_modules
+    if missing_python_modules:
+        failures.append("required artifact storage adapters are missing")
 
     populated_secrets: list[str] = []
     for env_path in (ROOT / ".env.example", ROOT / ".env.production.example"):

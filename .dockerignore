@@ -1,0 +1,19 @@
+# Keep the build context small and exclude local credentials.
+.git/
+.venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+!.env.production.example
+/data/
+/artifacts/
+/backups/
+/logs/
+/.run/
+qa/results/
+acceptance-results/

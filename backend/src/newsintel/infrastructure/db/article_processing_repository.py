@@ -434,26 +434,32 @@ class SqlAlchemyArticleProcessingRepository(ArticleProcessingRepository):
                 article.published_at = extracted.published_at or article.published_at
                 article.updated_at = completed_at
 
-            existing_version = await session.scalar(
-                select(ArticleVersionModel).where(
-                    ArticleVersionModel.article_id == article.id,
-                    ArticleVersionModel.content_sha256 == extracted.content_sha256,
-                )
+            # Inspect the latest chronological revision, not any historical
+            # version that happened to have the same body hash. This captures
+            # headline-only changes and A -> B -> A body reversions.
+            latest_version = await session.scalar(
+                select(ArticleVersionModel)
+                .where(ArticleVersionModel.article_id == article.id)
+                .order_by(ArticleVersionModel.version_number.desc())
+                .limit(1)
             )
-            created_version = existing_version is None
+            unchanged_revision = (
+                latest_version is not None
+                and latest_version.content_sha256 == extracted.content_sha256
+                and latest_version.title == title
+                and latest_version.byline == extracted.byline
+                and latest_version.language == extracted.language
+                and latest_version.published_at == extracted.published_at
+                and latest_version.final_url == fetched.final_url
+            )
+            existing_version = latest_version if unchanged_revision else None
+            created_version = not unchanged_revision
             version_id: UUID | None = existing_version.id if existing_version else None
             claim_count = 0
             claim_ids: list[UUID] = []
 
             if existing_version is None:
-                version_number = (
-                    await session.scalar(
-                        select(func.max(ArticleVersionModel.version_number)).where(
-                            ArticleVersionModel.article_id == article.id
-                        )
-                    )
-                    or 0
-                ) + 1
+                version_number = (latest_version.version_number if latest_version else 0) + 1
                 version = ArticleVersionModel(
                     id=uuid7(),
                     article_id=article.id,

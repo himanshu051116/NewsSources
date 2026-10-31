@@ -17,7 +17,7 @@ ROUTES = SRC / "api" / "routes"
 
 
 def test_collaboration_schema_head_and_tables_are_release_required() -> None:
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     required = set(REQUIRED_V16_TABLES)
     for name in (
         "investigations",

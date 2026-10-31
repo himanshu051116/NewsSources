@@ -21,7 +21,7 @@ ROUTES = SRC / "api" / "routes"
 
 
 def test_v117_schema_head_and_search_indexes_are_release_required() -> None:
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     required = set(REQUIRED_V17_INDEXES)
     assert "ix_article_versions_fts_simple" in required
     assert "ix_article_versions_search_weighted_fts" in required

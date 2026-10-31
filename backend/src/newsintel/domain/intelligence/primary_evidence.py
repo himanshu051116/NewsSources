@@ -150,7 +150,7 @@ def _search_terms(claim_text: str, features: dict[str, object]) -> tuple[str, ..
             terms.append(speaker.strip())
     # Add a compact predicate phrase after removing volatile numeric/date tokens.
     predicate = re.sub(r"\b\d[\d,.]*\b", " ", claim_text)
-    predicate = re.sub(r"[^A-Za-z0-9\s-]", " ", predicate)
+    predicate = re.sub(r"[^\w\s\u0300-\u036F\u0900-\u097F-]", " ", predicate)
     predicate = " ".join(predicate.split())
     if predicate:
         terms.append(predicate[:180])

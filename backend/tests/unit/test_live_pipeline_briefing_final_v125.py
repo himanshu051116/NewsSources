@@ -10,7 +10,7 @@ BACKEND_ROOT = PROJECT_ROOT / "backend"
 
 def test_final_release_identity_and_schema() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert BRIEFING_METHODOLOGY_VERSION == "grounded-event-briefing-v1"
 
 
