@@ -6,7 +6,7 @@ A headline is not a complete record of an event. The same report can be republis
 
 The application collects reporting, preserves article revisions, groups possible reports of the same event, and gives an analyst a place to examine claims alongside their source material and earlier coverage. It is **not** an automatic truth detector or a replacement for editorial judgment.
 
-> **Release status:** `main` contains the v1.25 application. The [reliability changes (PR #1)](https://github.com/himanshu051116/NewsSources/pull/1) and [PDF/OCR work (PR #2)](https://github.com/himanshu051116/NewsSources/pull/2) are draft changes, **not part of this branch**. Passing automated tests is not a newsroom accuracy certificate.
+> **Release status:** `main` contains the v1.25 application. The [reliability changes (PR #1)](https://github.com/himanshu051116/NewsSources/pull/1) and [PDF/OCR work (PR #2)](https://github.com/himanshu051116/NewsSources/pull/2) remain draft work **not released on `main`**. Passing automated tests is not a newsroom accuracy certificate.
 
 ## What the application actually does
 
@@ -59,6 +59,8 @@ This runs local services; it does **not** automatically provide an indexed, veri
 5. **Save the investigation** with notes and references. A generated briefing is a research aid, not a publish-ready fact-check.
 
 An example failure case worth testing: two outlets quote the same press release about a new government policy. Treating the two articles as independent confirmations would overstate the evidence. The lineage model is intended to make this visible; its effectiveness must still be evaluated.
+
+For a concrete example, follow the [fictional correction-and-source-lineage investigation](examples/README.md). It shows why two reports repeating the same official notice are not two independent confirmations.
 
 ## How the code is organized
 

@@ -39,3 +39,18 @@ def test_repository_readme_and_archive_index_links_are_local_files() -> None:
                 continue
             destination = path.parent / link.split("#", 1)[0]
             assert destination.is_file(), f"{path.relative_to(ROOT)}: broken link {link}"
+
+def test_fictional_case_is_labeled_and_exposes_a_correction_without_false_corroboration() -> None:
+    case = json.loads(
+        (ROOT / "examples/editorial_review_case.json").read_text(encoding="utf-8")
+    )
+    assert case["factual_status"] == "fictional_no_real_world_claims"
+    assert case["schema"] == "documentation_only_not_ingestible"
+    versions = case["source_notice"]["versions"]
+    assert versions[1]["corrects"] == versions[0]["version"]
+    assert versions[0]["closed_access_points"] == 12
+    assert versions[1]["closed_access_points"] == 9
+    assert all(a["independent_verification"] is False for a in case["articles"])
+    assert len({a["source_lineage_id"] for a in case["articles"]}) == 1
+    assert all(c["independent_confirmations"] == 0 for c in case["claims"])
+    assert case["nearby_but_distinct_event"]["should_merge"] is False

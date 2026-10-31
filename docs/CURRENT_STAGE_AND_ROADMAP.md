@@ -1,4 +1,6 @@
-# Current Stage and Development Roadmap
+# Historical engineering assessment — 12 October 2026
+
+**Historical planning document.** This assessment describes the v1.22 branch as of 12 October 2026 and is retained for traceability. It is **not the current project status**. See the [repository overview](../README.md), [release history](archive/README.md) and open GitHub pull requests for later changes.
 
 **Assessment date:** 2026-10-12  
 **Release under test:** 1.22.0 Production Search Deployment Control

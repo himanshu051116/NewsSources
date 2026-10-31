@@ -21,6 +21,10 @@ No such live evidence is bundled or asserted in this documentation.
 
 Run `python qa/validate_repository_data.py` for schema and provenance checks, then the event-accuracy unit test to see whether current matching behavior agrees with the intended labels.
 
+## Inspectable fictional scenario
+
+[The correction-and-source-lineage walkthrough](../examples/README.md) uses a deliberately invented municipal bulletin, two derivative articles, a later correction and a different nearby incident. It is an editorial design example, **not crawled reporting**, benchmark evidence or an importable database fixture.
+
 ## Real-world evaluation still required
 
 For defensible editorial claims, assemble a permissioned corpus with archived source URLs, capture times, publisher revision snapshots, rights/retention notes, annotator instructions, independent double review and disagreement adjudication. Split by event and source lineage to avoid train/test leakage. Report **event linking**, **extraction fidelity**, **citation location**, **factual adjudication** and **abstention** separately.

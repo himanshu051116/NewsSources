@@ -1,0 +1,86 @@
+{
+  "fixture_type": "fictional_editorial_walkthrough",
+  "factual_status": "fictional_no_real_world_claims",
+  "schema": "documentation_only_not_ingestible",
+  "scenario": "Northbank river-closure bulletin (invented case)",
+  "purpose": "Demonstrate revision history, same-source syndication, distinct-event guards, and unresolved verification",
+  "source_notice": {
+    "id": "notice-nb-01",
+    "name": "Northbank Council (fictional)",
+    "url": "https://northbank.example/notices/river-closure",
+    "lineage_id": "municipal-notice-nb-01",
+    "versions": [
+      {
+        "version": "v1",
+        "captured_at": "2026-10-01T09:20:00Z",
+        "headline": "Temporary riverbank closures",
+        "text": "The council reports twelve access points closed following an inspection.",
+        "closed_access_points": 12
+      },
+      {
+        "version": "v2",
+        "captured_at": "2026-10-01T15:40:00Z",
+        "headline": "Correction: temporary riverbank closures",
+        "text": "Correction to the morning notice: nine access points were closed; the previous figure of twelve was incorrect.",
+        "closed_access_points": 9,
+        "corrects": "v1"
+      }
+    ]
+  },
+  "articles": [
+    {
+      "id": "article-a",
+      "publisher": "Northbank Gazette (fictional)",
+      "url": "https://gazette.northbank.example/stories/river-closure",
+      "captured_at": "2026-10-01T11:00:00Z",
+      "summary": "Twelve riverbank access points reportedly closed.",
+      "attributed_notice_version": "v1",
+      "source_lineage_id": "municipal-notice-nb-01",
+      "independent_verification": false
+    },
+    {
+      "id": "article-b",
+      "publisher": "Regional Wire (fictional)",
+      "url": "https://wire.northbank.example/briefs/closure",
+      "captured_at": "2026-10-01T12:15:00Z",
+      "summary": "The regional wire repeats the council's figure of twelve closures.",
+      "attributed_notice_version": "v1",
+      "source_lineage_id": "municipal-notice-nb-01",
+      "independent_verification": false
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-12",
+      "statement": "Twelve riverbank access points were closed.",
+      "source_notice_version": "v1",
+      "origin_article_ids": [
+        "article-a",
+        "article-b"
+      ],
+      "review_state": "superseded_by_source_correction",
+      "independent_confirmations": 0
+    },
+    {
+      "id": "claim-9",
+      "statement": "Nine riverbank access points were closed.",
+      "source_notice_version": "v2",
+      "origin_article_ids": [],
+      "review_state": "requires_independent_review",
+      "independent_confirmations": 0
+    }
+  ],
+  "nearby_but_distinct_event": {
+    "id": "event-other",
+    "title": "Inspection of Northbank footbridge (fictional)",
+    "description": "Same municipality and date, but a separate bridge-safety inspection.",
+    "should_merge": false
+  },
+  "analyst_notes": [
+    "The first two reports are not independent corroboration: they share the council's v1 notice.",
+    "Preserve v1 rather than silently replacing its original quoted figure.",
+    "Surface the v2 correction and mark the earlier figure superseded.",
+    "The revised figure has a traceable source location but still needs human review.",
+    "Do not merge the independent footbridge inspection solely because of shared location and date."
+  ]
+}

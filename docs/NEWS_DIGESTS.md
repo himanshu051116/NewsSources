@@ -76,7 +76,7 @@ unrelated metadata. No migration or additional background worker is required.
 Items include `freshness_status` (`current`, `date_unconfirmed`, `expired`, or
 `historical`) and an optional `freshness_reason`. Editions count retained flagged
 stories in `excluded_stale_or_uncertain`. These are editorial date signals, not
-fact-checking certificates. See `READER-UI-FRESHNESS-AUDIT-2026-10-31.md` for the
+fact-checking certificates. See [the archived 31 October reader review](archive/reviews/2026-10-31-reader-dates.md) for the
 latest checks and remaining limits.
 
 Regression checks live in `backend/tests/unit/test_news_digests.py` and the

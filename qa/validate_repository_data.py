@@ -46,6 +46,18 @@ def check() -> None:
         for field in ("left_title", "left_text", "right_title", "right_text"):
             assert isinstance(case[field], str) and case[field].strip(), field
     assert labels == {"same", "different"}, "both event-link labels required"
+    sample = json.loads((ROOT / "examples/editorial_review_case.json").read_text(encoding="utf-8"))
+    assert sample["factual_status"] == "fictional_no_real_world_claims"
+    assert sample["schema"] == "documentation_only_not_ingestible"
+    notice = sample["source_notice"]
+    versions = notice["versions"]
+    assert [v["version"] for v in versions] == ["v1", "v2"]
+    assert versions[1]["corrects"] == versions[0]["version"]
+    assert versions[0]["closed_access_points"] != versions[1]["closed_access_points"]
+    assert all(a["source_lineage_id"] == notice["lineage_id"] for a in sample["articles"])
+    assert all(a["independent_verification"] is False for a in sample["articles"])
+    assert sample["nearby_but_distinct_event"]["should_merge"] is False
+    assert all(c["independent_confirmations"] == 0 for c in sample["claims"])
     print(f"Repository data OK: {len(sources['sources'])} candidate sources, {len(cases)} constructed event pairs.")
     print("Note: no live endpoints, source rights or story facts were verified.")
 
