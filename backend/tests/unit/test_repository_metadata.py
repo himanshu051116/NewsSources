@@ -39,7 +39,11 @@ def test_constructed_event_pair_labels_are_not_presented_as_fact_checks() -> Non
 def test_repository_readme_and_archive_index_links_are_local_files() -> None:
     import re
 
-    paths = [ROOT / "README.md", ROOT / "docs/README.md", ROOT / "docs/archive/README.md"]
+    paths = [
+        ROOT / "README.md", ROOT / "docs/README.md",
+        ROOT / "docs/PIPELINE_OVERVIEW.md", ROOT / "docs/IMPLEMENTED_ARCHITECTURE.md",
+        ROOT / "docs/archive/README.md",
+    ]
     for path in paths:
         text = path.read_text(encoding="utf-8")
         for link in re.findall(r"\]\(([^)]+)\)", text):
@@ -69,3 +73,18 @@ def test_active_docs_root_excludes_versioned_upgrade_notes() -> None:
     assert remaining == [], "historical upgrade notes belong in docs/archive/implementation"
     archived = list((docs / "archive/implementation").glob("v*.md"))
     assert len(archived) == 19, "all historical implementation notes must be preserved"
+
+
+
+def test_readme_separates_implemented_system_from_architecture_proposal() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    implemented = (ROOT / "docs/IMPLEMENTED_ARCHITECTURE.md").read_text(
+        encoding="utf-8"
+    )
+    proposed = (ROOT / "docs/ARCHITECTURE.md").read_text(encoding="utf-8")
+    assert "(docs/IMPLEMENTED_ARCHITECTURE.md)" in readme
+    assert "Policy-aware article fetch" in readme
+    assert "Extraction outcome" in readme
+    assert "proprietary" in readme.lower()
+    assert "Historical design document" in proposed
+    assert "backend/src/newsintel/workers/articles.py" in implemented

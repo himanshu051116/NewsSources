@@ -4,6 +4,8 @@ Status: Proposed
 Design date: June 25, 2026  
 Scope: Architecture and contracts only; implementation code is intentionally deferred.
 
+> **Historical design document:** This June 2026 proposal is retained for design history. It references optional or future components (for example, a Next.js frontend, Kafka/Redis infrastructure, and model services) that are **not** all dependencies of the current app. For the modules actually checked into the repository, use the [implemented architecture](IMPLEMENTED_ARCHITECTURE.md) and [project status](STATUS.md).
+
 ## 1. Product definition
 
 This platform is not a feed reader. It converts a continuous stream of publications into a structured, searchable knowledge base of:

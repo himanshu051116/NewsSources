@@ -6,48 +6,45 @@ This diagram describes the **merged code path at a functional level**, not a cla
 
 ```mermaid
 flowchart TB
-    subgraph Acquisition["Collection"]
-      S["Publisher feeds, sitemaps, pages and permitted document URLs"]
-      R["Source registry and channel policy"]
-      Q["Polling schedule and URL frontier"]
-      FETCH["Policy-aware HTTP fetch"]
-      S --> R --> Q --> FETCH
+    subgraph Acquisition["Source collection"]
+        SRC["Publisher feeds, sitemaps and permitted URLs"]
+        REG["Source registry and access policy"]
+        JOB["Scheduled channels and URL frontier"]
+        FETCH["Rate-limited, policy-aware HTTP fetch"]
+        SRC --> REG --> JOB --> FETCH
     end
-
-    subgraph Extraction["Extraction and recording"]
-      FMT{"Response type"}
-      HTML["HTML body, title, canonical URL and timestamps"]
-      PDF["Bounded PDF text by page; opt-in English/Hindi OCR"]
-      VAL["Check extraction outcome; retain warnings and page provenance"]
-      NORM["Normalize, deduplicate and retain article versions"]
-      FETCH --> FMT
-      FMT -->|HTML| HTML --> VAL
-      FMT -->|PDF| PDF --> VAL
-      VAL --> NORM
+    subgraph Extraction["Article extraction"]
+        TYPE{"Response content type"}
+        HTML["HTML article text, canonical URL and timestamps"]
+        PDF["Bounded PDF page text; OCR when enabled"]
+        GATE{"Text usable?"}
+        NORM["Normalize; retain article revisions and warnings"]
+        FETCH --> TYPE
+        TYPE -->|HTML| HTML --> GATE
+        TYPE -->|PDF| PDF --> GATE
+        GATE -->|yes or explicitly partial| NORM
     end
-
-    subgraph Research["Persistence and analysis"]
-      DB[("PostgreSQL: articles, versions, sources, events, claims")]
-      EVENT["Event candidates, corrections and source lineage"]
-      HIST["Historical retrieval and claim/evidence review"]
-      NORM --> DB
-      DB --> EVENT --> HIST
+    subgraph Records["Storage and research"]
+        PG[("PostgreSQL: sources, article versions, events, evidence")]
+        EVENT["Event matching and shared-source lineage"]
+        HISTORY["Historical search and claim review"]
+        NORM --> PG
+        PG --> EVENT --> HISTORY
     end
-
-    subgraph Access["Analyst access"]
-      API["FastAPI: source records, search and filtering"]
-      UI["Reader and analyst workspace"]
-      DB --> API
-      HIST --> API
-      API <--> UI
+    subgraph Serving["Analyst access"]
+        API["FastAPI: source records and retrieval"]
+        UI["Local news reader and workspace"]
+        PG --> API
+        HISTORY --> API
+        API <--> UI
     end
-
-    ERR["Monitoring: errors, partial outcomes, retry state"]
-    ART["Raw artifacts in configured local or S3-compatible storage"]
-    FETCH -.->|fetch failure| ERR
-    VAL -.->|partial or failed extraction| ERR
-    ERR -.->|eligible retry| Q
-    FETCH -.->|when configured and permitted| ART
+    WARN["Errors, warnings, retry state"]
+    RAW["Permitted raw artifacts: local or S3-compatible storage"]
+    FETCH -.->|fetch failure| WARN
+    GATE -->|unusable| WARN
+    GATE -.->|partial extraction warnings| WARN
+    WARN -.->|retry if eligible| JOB
+    FETCH -.->|when configured and permitted| RAW
 ```
 
 ## Operational boundaries

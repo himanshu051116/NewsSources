@@ -8,7 +8,8 @@ Use [project status](STATUS.md) for the features currently merged into `main` an
 | What is the end-to-end data flow? | [Pipeline overview](PIPELINE_OVERVIEW.md) |
 | How do articles reach the database? | [Acquisition architecture](ACQUISITION_ARCHITECTURE.md) |
 | Why is an article grouped with an event? | [Event identity and evidence architecture](EVENT_INTELLIGENCE_ARCHITECTURE.md) |
-| What stores article revisions and lineage? | [System architecture](ARCHITECTURE.md) |
+| What modules and services are in the current code? | [Implemented architecture](IMPLEMENTED_ARCHITECTURE.md) |
+| What was originally proposed? | [June 2026 architecture proposal](ARCHITECTURE.md) |
 | How do analysts compare earlier reporting? | [Historical research providers](HISTORICAL_RESEARCH.md) |
 | How are briefings assembled? | [Daily and weekly briefs](NEWS_DIGESTS.md) |
 | Which data are real, synthetic or unverified? | [Data provenance and evaluation](DATA_AND_EVALUATION.md) |
@@ -17,6 +18,7 @@ Use [project status](STATUS.md) for the features currently merged into `main` an
 
 ## Technical design and implementation
 
+- [Implemented architecture](IMPLEMENTED_ARCHITECTURE.md) maps the checked-in application to real source files; [the older design proposal](ARCHITECTURE.md) includes aspirational components that should not be mistaken for current dependencies.
 - [Implementation plan](IMPLEMENTATION_PLAN.md) and [implementation guardrails](IMPLEMENTATION_GUARDRAILS.md) are long-form engineering references, not short quickstarts.
 - [Module synchronization contract](MODULE_SYNCHRONIZATION.md) records ownership between modules.
 - [Local AI strategy](LOCAL_AI_STRATEGY.md) describes optional locally hosted model features; do not assume these are enabled by default.

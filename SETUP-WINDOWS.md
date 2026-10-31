@@ -22,7 +22,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\run-platform.ps1 start
 ```
 
-`bootstrap.ps1` creates `.env` and a local `.env.local` automatically when they do not exist. Existing files are never overwritten.
+`bootstrap.ps1` creates `.env` and `.env.local` if missing, without overwriting existing settings. The local override enables a development-only authentication bypass and generates a session secret. It is intended for a private machine, **not** for internet-facing or production use.
 
 The default local stack starts only PostgreSQL. Qdrant starts only when semantic history is enabled. MinIO starts only when S3 artifact storage is selected.
 
@@ -56,8 +56,10 @@ Get-Content .run\logs\workspace-monitor.err.log -Tail 100
 Database should report revision:
 
 ```text
-0033_grounded_news_explainer
+0034_article_revision_history
 ```
+
+Check service readiness with `Invoke-WebRequest http://127.0.0.1:8010/api/v1/health/ready`. If the reader has no articles, review the publisher configuration and polling logs; installation does not seed a real news archive automatically.
 
 The 1.20 migration adds concurrent English-morphology FTS indexes while preserving the language-neutral simple indexes used for Hindi and other scripts. The 1.21 migration adds auditable search-promotion policies, gate evaluations and human release-decision records. Production search remains lexical by default; semantic reranking is benchmark-only and requires the optional local Ollama/Qdrant semantic stack.
 

@@ -10,32 +10,33 @@ This is the main path from a discovered URL to an analyst's investigation. Failu
 
 ```mermaid
 flowchart TB
-    A["Publisher feeds, sitemaps, websites and document links"]
-    B["Source registry, URL frontier and scheduled collection"]
-    C{"Response format"}
-    D["HTML article extraction"]
-    E["PDF page text and optional OCR"]
-    F["Normalize, deduplicate and retain revisions"]
-    G[("PostgreSQL: articles, metadata and provenance")]
-    H["Event matching, historical context and claim review"]
-    I["FastAPI: search, filtering and source access"]
-    J["News reader and analyst workspace"]
-    K["Monitoring: failures, warnings and eligible retries"]
+    S["Publisher feeds, sitemaps and permitted URLs"]
+    REG["Source registry, frontier and schedule"]
+    FETCH["Policy-aware article fetch"]
+    FORMAT{"Content type"}
+    HTML["HTML extraction"]
+    PDF["PDF text and opt-in OCR"]
+    CHECK{"Extraction outcome"}
+    NORM["Normalize, deduplicate and version"]
+    DB[("PostgreSQL: articles and provenance")]
+    REVIEW["Event, history and evidence review"]
+    API["FastAPI search and source access"]
+    UI["Reader and analyst workspace"]
+    MON["Monitoring: failures, warnings and retries"]
 
-    A --> B --> C
-    C -->|HTML| D --> F
-    C -->|PDF| E --> F
-    F --> G
-    G --> H --> I
-    G --> I
-    I <--> J
-    B -.->|fetch error| K
-    D -.->|extraction issue| K
-    E -.->|OCR or page warning| K
-    K -.->|retry policy| B
+    S --> REG --> FETCH --> FORMAT
+    FORMAT -->|HTML| HTML --> CHECK
+    FORMAT -->|PDF| PDF --> CHECK
+    CHECK -->|usable or flagged partial| NORM --> DB
+    DB --> REVIEW --> API
+    DB --> API
+    API <--> UI
+    FETCH -.->|fetch failure| MON
+    CHECK -.->|unusable or warning| MON
+    MON -.->|eligible retry| REG
 ```
 
-See the [pipeline walkthrough](docs/PIPELINE_OVERVIEW.md) for the quality gates, storage boundaries and background-worker behavior. PDF/OCR output and source links are reviewable evidence locations, not factual verification.
+See the [pipeline walkthrough](docs/PIPELINE_OVERVIEW.md) for failure handling and [implemented architecture](docs/IMPLEMENTED_ARCHITECTURE.md) for links to the relevant modules. The graph depicts the main processing path, not a guarantee that every source fetch succeeds. PDF/OCR output and source links are reviewable evidence locations, not factual verification.
 
 ## What is implemented
 
@@ -62,6 +63,10 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\bootstrap.ps1
 .\scripts\run-platform.ps1 start
 ```
+
+On the first run, `bootstrap.ps1` creates `.env` and `.env.local` if missing. The latter contains a generated session secret and enables **local development authentication bypass**. Existing environment files are preserved. This setup must not be exposed publicly or used as production authentication.
+
+Check readiness after startup with `Invoke-WebRequest http://127.0.0.1:8010/api/v1/health/ready`. An empty reader is normal until approved publisher sources have been configured and collected.
 
 Open the local tools:
 
@@ -130,7 +135,7 @@ After local bootstrap:
 .\scripts\services.ps1 doctor
 ```
 
-CI also runs PostgreSQL integration tests, Windows checks, S3-compatible storage tests, release integrity and a Docker build. [The latest merged `main` workflow](https://github.com/himanshu051116/NewsSources/actions/runs/41177697695) passed these configured checks on 31 October 2026.
+CI runs PostgreSQL integration tests, Windows compatibility, S3-compatible storage checks, release integrity and a Docker build. Inspect the [current `main` workflow results](https://github.com/himanshu051116/NewsSources/actions?query=branch%3Amain); a passing build does not measure real-world publisher coverage or editorial accuracy.
 
 ## Known limitations
 
@@ -139,6 +144,10 @@ CI also runs PostgreSQL integration tests, Windows checks, S3-compatible storage
 - OCR quality, PDF tables and page citations need independent review on varied real documents.
 - A production deployment requires verified publisher permissions, authentication, backup/restore testing and extended live-source trials. See [current project status](docs/STATUS.md).
 
+## License and reuse
+
+The package metadata declares this project **proprietary**, and the repository does not include a `LICENSE` file. Public source visibility does not grant rights to copy, modify or redistribute it. Contact the maintainer before reuse.
+
 ## Further reading
 
-[Documentation index](docs/README.md) · [System architecture](docs/ARCHITECTURE.md) · [Acquisition design](docs/ACQUISITION_ARCHITECTURE.md) · [Historical research](docs/HISTORICAL_RESEARCH.md) · [Engineering history](docs/archive/README.md)
+[Implemented architecture](docs/IMPLEMENTED_ARCHITECTURE.md) · [Documentation index](docs/README.md) · [Acquisition design](docs/ACQUISITION_ARCHITECTURE.md) · [Historical research](docs/HISTORICAL_RESEARCH.md) · [Proposed architecture (June 2026)](docs/ARCHITECTURE.md) · [Engineering history](docs/archive/README.md)
