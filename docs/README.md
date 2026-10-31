@@ -20,7 +20,7 @@ Use the live [project status](STATUS.md) to see which parts of NewsSources are s
 - [Local AI strategy](LOCAL_AI_STRATEGY.md) describes optional locally hosted model features; do not assume these are enabled by default.
 - [Fictional editorial walkthrough](../examples/README.md) demonstrates correction handling and shared-source reporting without pretending to contain verified news.
 - [Historical release and QA archive](archive/README.md) retains prior audit reports.
-- [Historical implementation notes](archive/implementation/) are grouped by version and technical subject, rather than promoted as current features.
+- [Historical implementation notes](archive/README.md) are grouped by version and technical subject, rather than promoted as current features.
 
 ## What counts as verification?
 
