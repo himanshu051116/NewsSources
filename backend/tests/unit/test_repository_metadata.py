@@ -39,7 +39,7 @@ def test_constructed_event_pair_labels_are_not_presented_as_fact_checks() -> Non
 def test_repository_readme_and_archive_index_links_are_local_files() -> None:
     import re
 
-    paths = [ROOT / "README.md", ROOT / "docs/archive/README.md"]
+    paths = [ROOT / "README.md", ROOT / "docs/README.md", ROOT / "docs/archive/README.md"]
     for path in paths:
         text = path.read_text(encoding="utf-8")
         for link in re.findall(r"\]\(([^)]+)\)", text):
@@ -62,3 +62,10 @@ def test_fictional_case_is_labeled_and_exposes_a_correction_without_false_corrob
     assert len({a["source_lineage_id"] for a in case["articles"]}) == 1
     assert all(c["independent_confirmations"] == 0 for c in case["claims"])
     assert case["nearby_but_distinct_event"]["should_merge"] is False
+
+def test_active_docs_root_excludes_versioned_upgrade_notes() -> None:
+    docs = ROOT / "docs"
+    remaining = [file.name for file in docs.glob("*.md") if "_UPGRADE_" in file.name]
+    assert remaining == [], "historical upgrade notes belong in docs/archive/implementation"
+    archived = list((docs / "archive/implementation").glob("v*.md"))
+    assert len(archived) == 19, "all historical implementation notes must be preserved"
