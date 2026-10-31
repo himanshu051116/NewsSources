@@ -10,7 +10,7 @@ def test_accuracy_validation_release_contract() -> None:
     assert VALIDATION_PROGRAM_VERSION == "accuracy-validation-program-v1"
     route = (root / "backend/src/newsintel/api/routes/intelligence.py").read_text(encoding="utf-8")
     page = (root / "backend/src/newsintel/api/routes/accuracy_dashboard.py").read_text(encoding="utf-8")
-    docs = (root / "docs/ACCURACY_VALIDATION_PROGRAM_1.10.0.md").read_text(encoding="utf-8")
+    docs = (root / "docs/archive/implementation/v1.10-validation-program.md").read_text(encoding="utf-8")
     assert "/verification-benchmark/{benchmark_set}/validation-report" in route
     assert "Golden-corpus validation" in page
     assert "Wilson" in docs

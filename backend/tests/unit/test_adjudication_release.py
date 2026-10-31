@@ -13,5 +13,5 @@ def test_adjudication_release_contract():
     assert '"review-sheet"' in script
     assert '"agreement"' in script
     assert '"finalize"' in script
-    docs = (root / "docs" / "BLIND_ADJUDICATION_1.9.0.md").read_text(encoding="utf-8")
+    docs = (root / "docs" / "archive/implementation/v1.9-blind-adjudication.md").read_text(encoding="utf-8")
     assert "intentionally omits `predicted_label`" in docs
