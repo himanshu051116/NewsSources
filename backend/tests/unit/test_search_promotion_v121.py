@@ -47,7 +47,7 @@ def _input(**overrides):
 
 def test_v121_release_contract_and_schema_objects() -> None:
     assert __version__ == "1.25.0"
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert {"search_promotion_policies", "search_promotion_evaluations", "search_promotion_decisions"}.issubset(REQUIRED_V21_TABLES)
     assert {
         "ix_search_promotion_policies_updated",

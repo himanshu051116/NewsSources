@@ -44,6 +44,7 @@ class ConflictResolution:
 def resolve_evidence_conflict(
     evidence: tuple[ConflictEvidence, ...],
 ) -> ConflictResolution:
+    mixed_lineages = _mixed_source_lineages(evidence)
     grouped = _deduplicate_lineages(evidence)
     support = contradiction = dispute = temporal = 0.0
     primary_support = primary_contradiction = False
@@ -103,6 +104,10 @@ def resolve_evidence_conflict(
         confidence = min(0.88, 0.45 + 0.1 * (support + contradiction + dispute))
         rationale = "Available evidence is mixed or too close to resolve safely."
 
+    if mixed_lineages:
+        state = ConflictResolutionState.UNRESOLVED_CONFLICT
+        confidence = min(confidence, 0.70)
+        rationale = "One lineage contains materially opposing stances; review required."
     return ConflictResolution(
         resolver_version=CONFLICT_RESOLVER_VERSION,
         state=state,
@@ -121,8 +126,23 @@ def resolve_evidence_conflict(
                 "truth from publisher identity, source popularity, or raw URL count."
             ),
             "lineage_deduplication": True,
+            "mixed_stance_lineage_count": len(mixed_lineages),
         },
     )
+
+
+def _mixed_source_lineages(evidence: tuple[ConflictEvidence, ...]) -> set[str]:
+    grouped: dict[str, set[str]] = {}
+    for index, item in enumerate(evidence):
+        if _weight(item) < 0.25:
+            continue
+        key = item.lineage_key or item.source_key or f"anonymous:{index}"
+        stance = _norm(item.stance)
+        if stance in {"support", "supported"}:
+            grouped.setdefault(key, set()).add("support")
+        elif stance in {"contradict", "contradicted", "contradiction"}:
+            grouped.setdefault(key, set()).add("contradict")
+    return {key for key, stances in grouped.items() if len(stances) == 2}
 
 
 def _deduplicate_lineages(evidence: tuple[ConflictEvidence, ...]) -> tuple[ConflictEvidence, ...]:

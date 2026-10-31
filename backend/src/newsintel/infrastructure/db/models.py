@@ -294,11 +294,9 @@ class ArticleVersionModel(Base):
             "version_number",
             name="uq_article_versions_article_number",
         ),
-        UniqueConstraint(
-            "article_id",
-            "content_sha256",
-            name="uq_article_versions_content",
-        ),
+        # The same body can reappear after an intervening correction.
+        # Uniqueness belongs to the monotonically increasing version_number.
+        Index("ix_article_versions_article_content", "article_id", "content_sha256"),
         Index("ix_article_versions_article_created", "article_id", "created_at"),
     )
 

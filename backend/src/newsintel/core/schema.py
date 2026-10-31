@@ -1,4 +1,4 @@
-EXPECTED_SCHEMA_REVISION = "0033_grounded_news_explainer"
+EXPECTED_SCHEMA_REVISION = "0034_article_revision_history"
 
 REQUIRED_V08_TABLES = (
     "evidence_authority_profiles",

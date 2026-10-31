@@ -24,7 +24,7 @@ ROUTES = SRC / "api" / "routes"
 
 
 def test_v118_schema_requires_search_quality_and_entity_intelligence() -> None:
-    assert EXPECTED_SCHEMA_REVISION == "0033_grounded_news_explainer"
+    assert EXPECTED_SCHEMA_REVISION == "0034_article_revision_history"
     assert {
         "search_benchmark_queries",
         "search_relevance_judgments",

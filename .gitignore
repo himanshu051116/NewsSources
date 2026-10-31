@@ -19,8 +19,8 @@ build/
 .DS_Store
 Thumbs.db
 
-data/
-artifacts/
+/data/
+/artifacts/
 
 
 # Local secrets and runtime data

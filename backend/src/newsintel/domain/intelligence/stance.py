@@ -90,9 +90,18 @@ def assess_evidence_stance(
         confidence = 0.78
         rationale = "The most relevant passage reverses the claim's polarity through explicit negation."
     elif best.relationship is EvidencePassageRelationship.MATCHING_ASSERTION:
-        stance = PassageStance.SUPPORT
-        confidence = min(0.96, 0.62 + 0.25 * max(best.similarity_score, best.lexical_overlap))
-        rationale = "The most relevant passage makes a materially matching assertion with no detected normalized numeric/temporal conflict."
+        # Devanagari similarity is not reliable polarity evidence. Until a
+        # language-aware model is validated, abstain on non-identical assertions.
+        if _contains_devanagari(claim_text + best.text) and (
+            _normalized_proposition(claim_text) != _normalized_proposition(best.text)
+        ):
+            stance = PassageStance.CONTEXT
+            confidence = 0.40
+            rationale = "Indic textual similarity alone cannot establish agreement."
+        else:
+            stance = PassageStance.SUPPORT
+            confidence = min(0.96, 0.62 + 0.25 * max(best.similarity_score, best.lexical_overlap))
+            rationale = "The most relevant passage makes a materially matching assertion with no detected normalized numeric/temporal conflict."
     elif best.relationship is EvidencePassageRelationship.RELATED_CONTEXT:
         stance = PassageStance.CONTEXT
         confidence = 0.58
@@ -119,7 +128,18 @@ def assess_evidence_stance(
 
 def _negation_mismatch(claim_text: str, passage: str) -> bool:
     pattern = re.compile(r"\b(?:not|never|no longer|didn't|did not|hasn't|has not|isn't|is not|wasn't|was not|denied)\b", re.I)
-    return bool(pattern.search(claim_text)) != bool(pattern.search(passage))
+    indic = re.compile(r"नहीं|नही|मत|बिना|इनकार|अस्वीकार")
+    claim_negative = bool(pattern.search(claim_text) or indic.search(claim_text))
+    passage_negative = bool(pattern.search(passage) or indic.search(passage))
+    return claim_negative != passage_negative
+
+
+def _contains_devanagari(text: str) -> bool:
+    return bool(re.search(r"[\u0900-\u097F]", text))
+
+
+def _normalized_proposition(text: str) -> str:
+    return " ".join(text.casefold().strip(" .!?।").split())
 
 
 def _metadata(claim_temporal, evidence_temporal, passages) -> dict[str, object]:
