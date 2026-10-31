@@ -61,6 +61,6 @@ flowchart TB
 
 For more detail, see [acquisition policy](ACQUISITION_ARCHITECTURE.md), [event and evidence design](EVENT_INTELLIGENCE_ARCHITECTURE.md), [source data and evaluation](DATA_AND_EVALUATION.md), and the [production runbook](../PRODUCTION-RUNBOOK.md).
 
-### Why this layout
+## Diagram scope
 
-The three supplied diagrams each capture part of the workflow. The simplest vertical version is the clearest README starting point, but it omits the HTML/PDF split, failure handling and article-version provenance. The more detailed versions contain useful branches but introduce crossing arrows and ambiguous recovery loops. This version keeps a readable primary path while isolating optional services and operational errors.
+The README provides a short source-to-reader overview. This page expands the extraction branches, article-version persistence and recovery paths. It is a map of components and data movement, not a guarantee about collection success, publisher permissions or downstream factual correctness.
