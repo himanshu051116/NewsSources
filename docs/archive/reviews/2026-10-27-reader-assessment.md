@@ -1,6 +1,6 @@
 # Critical functionality and MVP review — 27 October 2026
 
-Follow-up: [28 October reader upgrade](READER-MVP-UPGRADE-2026-10-28.md) addresses remembered choices, prepared excerpts, specific quality defects and bounded correction refresh. The findings below record the reviewed state; the follow-up documents what changed and what remains open.
+Follow-up: [28 October reader upgrade](2026-10-28-reader-workflow.md) addresses remembered choices, prepared excerpts, specific quality defects and bounded correction refresh. The findings below record the reviewed state; the follow-up documents what changed and what remains open.
 
 Review completed on 28 October 2026. The measured edition samples and regression runs below were recorded on 27 October; they are labelled by their actual capture date.
 
