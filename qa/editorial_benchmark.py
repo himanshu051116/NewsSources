@@ -252,9 +252,10 @@ def _write_new_outputs(outputs: list[tuple[Path, str]]) -> None:
     try:
         for path, content in outputs:
             path.parent.mkdir(parents=True, exist_ok=True)
-            with path.open("x", encoding="utf-8") as stream:
+            # Binary mode avoids Windows CRLF conversion and preserves SHA-256.
+            with path.open("xb") as stream:
                 created.append(path)
-                stream.write(content)
+                stream.write(content.encode("utf-8"))
     except OSError:
         for path in reversed(created):
             try:
