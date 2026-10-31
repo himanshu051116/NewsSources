@@ -25,6 +25,10 @@ Run `python qa/validate_repository_data.py` for schema and provenance checks, th
 
 [The correction-and-source-lineage walkthrough](../examples/README.md) uses a deliberately invented municipal bulletin, two derivative articles, a later correction and a different nearby incident. It is an editorial design example, **not crawled reporting**, benchmark evidence or an importable database fixture.
 
+## Offline evaluation admission
+
+The [event corpus workflow](EVENT_CORPUS_WORKFLOW.md) documents `qa/editorial_benchmark.py`. It validates exact local text hashes, source-lineage/event-group split independence, independent review labels and explicitly declared rights status before exporting an input to the existing event matcher. It does **not** obtain publisher permissions, validate reported facts, or measure source representativeness. All shipped examples are fictional.
+
 ## Real-world evaluation still required
 
 For defensible editorial claims, assemble a permissioned corpus with archived source URLs, capture times, publisher revision snapshots, rights/retention notes, annotator instructions, independent double review and disagreement adjudication. Split by event and source lineage to avoid train/test leakage. Report **event linking**, **extraction fidelity**, **citation location**, **factual adjudication** and **abstention** separately.

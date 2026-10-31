@@ -1,0 +1,74 @@
+{
+  "dataset_id": "fictional-demo-v1",
+  "dataset_kind": "synthetic",
+  "protocol_version": "event-pair-review-v1",
+  "description": "Fictional smoke-test input. No publisher documents or human annotation were collected.",
+  "cases": [
+    {
+      "case_key": "fictional-harbor-bridge-update",
+      "split": "dev",
+      "event_group_key": "fictional-harbor-bridge-closure",
+      "language": "en",
+      "category": "infrastructure",
+      "left": {
+        "title": "Harborbridge footpath temporarily closed",
+        "text": "The fictional borough closed the east footpath for an inspection.",
+        "source_url": "https://harborbridge.example/notices/footpath",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "source_lineage_key": "council-notice-1",
+        "sha256": "b0a57d4fbbf0f96c57ed4767ba3d494122982d8fccc67347c5abe3ce86f506f6"
+      },
+      "right": {
+        "title": "Inspection temporarily shuts east walkway",
+        "text": "A municipal notice says the east footpath was closed pending inspection.",
+        "source_url": "https://localpaper.example/bridge/walkway",
+        "captured_at": "2026-01-01T11:00:00Z",
+        "source_lineage_key": "council-notice-1",
+        "sha256": "97345f7dc77e1bfd155164555fbadc0bee1aa90996988211d4fda214474f5bb0"
+      },
+      "reviews": [
+        {
+          "reviewer_id": "fictional-reviewer-1",
+          "label": "same"
+        },
+        {
+          "reviewer_id": "fictional-reviewer-2",
+          "label": "same"
+        }
+      ]
+    },
+    {
+      "case_key": "fictional-harbor-vs-rail-service",
+      "split": "test",
+      "event_group_key": "fictional-harbor-rail-service",
+      "language": "en",
+      "category": "cross_topic",
+      "left": {
+        "title": "Ferry schedule altered",
+        "text": "The fictional ferry timetable changed for a holiday.",
+        "source_url": "https://ferry.example/updates/timetable",
+        "captured_at": "2026-01-03T10:00:00Z",
+        "source_lineage_key": "ferry-notice-1",
+        "sha256": "c8aae9d9e6c9def731bd8d775c17973d66dea33a3ffbdc7775982a834e1d2d87"
+      },
+      "right": {
+        "title": "Rail shuttle timetable revised",
+        "text": "The fictional rail shuttle adjusted its service on Sunday.",
+        "source_url": "https://transit.example/shuttle/sunday",
+        "captured_at": "2026-01-03T11:00:00Z",
+        "source_lineage_key": "rail-notice-1",
+        "sha256": "a7de358affb92348072f72c076edbad53c394c895b65e511f5c7d4d5a2251291"
+      },
+      "reviews": [
+        {
+          "reviewer_id": "fictional-reviewer-1",
+          "label": "different"
+        },
+        {
+          "reviewer_id": "fictional-reviewer-2",
+          "label": "different"
+        }
+      ]
+    }
+  ]
+}

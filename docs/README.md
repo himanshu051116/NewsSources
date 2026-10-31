@@ -11,6 +11,7 @@ Use the live [project status](STATUS.md) to see which parts of NewsSources are s
 | How do analysts compare earlier reporting? | [Historical research providers](HISTORICAL_RESEARCH.md) |
 | How are briefings assembled? | [Daily and weekly briefs](NEWS_DIGESTS.md) |
 | Which data are real, synthetic or unverified? | [Data provenance and evaluation](DATA_AND_EVALUATION.md) |
+| How can a real event-pair corpus be admitted for evaluation? | [Offline corpus and independent-review workflow](EVENT_CORPUS_WORKFLOW.md) |
 | How do I run or recover the application? | [Windows setup](../SETUP-WINDOWS.md) and [Production runbook](../PRODUCTION-RUNBOOK.md) |
 
 ## Technical design and implementation

@@ -113,7 +113,7 @@ PostgreSQL integration tests, S3-compatible storage checks, release integrity an
 ## Reference material
 
 - [Current development status](docs/STATUS.md) · [Fictional investigation example](examples/README.md)
-- [Documentation guide](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Acquisition](docs/ACQUISITION_ARCHITECTURE.md) · [Historical providers](docs/HISTORICAL_RESEARCH.md)
+- [Editorial benchmark admission](docs/EVENT_CORPUS_WORKFLOW.md) · [Documentation guide](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Acquisition](docs/ACQUISITION_ARCHITECTURE.md) · [Historical providers](docs/HISTORICAL_RESEARCH.md)
 - [Deployment runbook](PRODUCTION-RUNBOOK.md) · [Windows setup](SETUP-WINDOWS.md)
 - [Engineering review and historical releases](docs/archive/README.md) — earlier audit and version documents are retained as records, not presented as proof of current production readiness.
 
