@@ -23,11 +23,11 @@ python qa/editorial_benchmark.py --manifest evaluation/private/event-pairs.json 
 After admission, export an input to the existing event matcher:
 
 ```bash
-python qa/editorial_benchmark.py --manifest evaluation/private/event-pairs.json --export evaluation/results/event-pairs-for-benchmark.json
+python qa/editorial_benchmark.py --manifest evaluation/private/event-pairs.json --split test --export evaluation/results/event-pairs-for-benchmark.json
 newsintel-event-benchmark --input evaluation/results/event-pairs-for-benchmark.json --json > evaluation/results/event-scoring.json
 ```
 
-The exported file contains captured article texts: keep it private and respect source rights. The existing scorer consumes *all* exported cases. For held-out results, construct a test-only manifest or explicitly filter to `evaluation_split: test` through a documented independent step. Never call a mixed train/dev/test score held-out accuracy.
+The exported file contains captured article texts: keep it private and respect source rights. The gate audits **all manifest cases** for leakage, but `--split test` exports only held-out cases. The existing scorer consumes all exported cases, so never report unfiltered train/dev/test results as held-out accuracy.
 
 Run a fictional smoke test (not real-world performance):
 

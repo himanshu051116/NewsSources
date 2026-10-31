@@ -121,3 +121,14 @@ def test_failed_manifest_does_not_write_report(tmp_path: Path) -> None:
     result = _run(tmp_path, data, "--report", str(output))
     assert result.returncode == 2
     assert not output.exists()
+
+def test_export_only_held_out_split_without_skipping_full_audit(tmp_path: Path) -> None:
+    output = tmp_path / "test-only.json"
+    result = _run(tmp_path, _manifest(), "--allow-synthetic-export",
+                  "--split", "test", "--export", str(output))
+    assert result.returncode == 0, result.stderr
+    rows = json.loads(output.read_text(encoding="utf-8"))
+    assert len(rows) == 1
+    assert rows[0]["evaluation_split"] == "test"
+    assert json.loads(result.stdout)["export_case_count"] == 1
+    assert json.loads(result.stdout)["case_count"] == 2

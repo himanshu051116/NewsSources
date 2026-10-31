@@ -239,17 +239,27 @@ def run() -> int:
     parser.add_argument("--export", type=Path, help="write event benchmark input with capture texts")
     parser.add_argument("--allow-synthetic-export", action="store_true",
                         help="allow explicitly synthetic smoke-test export (never real-world evidence)")
+    parser.add_argument("--split", choices=("train", "dev", "test"),
+                        help="export only this split while auditing all cases")
     args = parser.parse_args()
     try:
         report, payload = prepare(args.manifest)
         if args.export is not None and report["dataset_kind"] == "synthetic" and not args.allow_synthetic_export:
             raise ManifestError("synthetic export requires --allow-synthetic-export")
+        if args.split and not args.export:
+            raise ManifestError("--split requires --export")
+        selected = [case for case in payload if case["evaluation_split"] == args.split] if args.split else payload
+        if args.export is not None:
+            if not selected:
+                raise ManifestError("requested split contains no cases")
+            report["export_split"] = args.split or "all"
+            report["export_case_count"] = len(selected)
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         if args.export:
             args.export.parent.mkdir(parents=True, exist_ok=True)
-            args.export.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            args.export.write_text(json.dumps(selected, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0
     except (ManifestError, OSError) as exc:
