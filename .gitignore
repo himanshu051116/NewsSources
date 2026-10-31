@@ -45,3 +45,7 @@ acceptance-results/
 
 # Generated browser reports and screenshots.
 qa/results/
+
+# Permission-controlled publisher captures and generated editorial evaluation exports.
+/evaluation/private/
+/evaluation/results/
