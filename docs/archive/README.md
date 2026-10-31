@@ -43,3 +43,27 @@ This directory holds **historical development notes** moved out of the repositor
 - [v1.25-local-validation](reviews/v1.25-local-validation.md)
 
 The filenames are organized by subject and version so the root directory describes the running project rather than a sequence of promotional release announcements. Original content is retained for auditability.
+
+## Implementation history (earlier design and upgrade notes)
+
+These files are historical engineering records. Numbered milestones describe how decisions changed over time; they are not independently verified release claims.
+
+- [v0.3-source-registry](implementation/v0.3-source-registry.md)
+- [v0.4-historical-evidence](implementation/v0.4-historical-evidence.md)
+- [v0.5-primary-evidence-temporality](implementation/v0.5-primary-evidence-temporality.md)
+- [v0.6-evidence-lineage-reliability](implementation/v0.6-evidence-lineage-reliability.md)
+- [v0.7-source-provenance-calibration](implementation/v0.7-source-provenance-calibration.md)
+- [v0.8-evidence-orchestration](implementation/v0.8-evidence-orchestration.md)
+- [v0.9-correction-propagation](implementation/v0.9-correction-propagation.md)
+- [v1.0-release-controls](implementation/v1.0-release-controls.md)
+- [v1.1-historical-enrichment-design](implementation/v1.1-historical-enrichment-design.md)
+- [v1.1-historical-enrichment-workflow](implementation/v1.1-historical-enrichment-workflow.md)
+- [v1.2-historical-context-quality](implementation/v1.2-historical-context-quality.md)
+- [v1.3-context-retrieval](implementation/v1.3-context-retrieval.md)
+- [v1.4-adaptive-extraction](implementation/v1.4-adaptive-extraction.md)
+- [v1.5-browser-recovery](implementation/v1.5-browser-recovery.md)
+- [v1.6-reader-interface](implementation/v1.6-reader-interface.md)
+- [v1.7-source-extraction-fidelity](implementation/v1.7-source-extraction-fidelity.md)
+- [v1.8-accuracy-measurement](implementation/v1.8-accuracy-measurement.md)
+- [v1.9-blind-adjudication](implementation/v1.9-blind-adjudication.md)
+- [v1.10-validation-program](implementation/v1.10-validation-program.md)
