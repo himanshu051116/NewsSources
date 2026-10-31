@@ -6,9 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from qa.editorial_benchmark import prepare
-
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))  # pytest pythonpath points at backend/src only
+
+from qa.editorial_benchmark import prepare
 SAMPLE = ROOT / "examples/synthetic_event_pair_manifest.json"
 
 
