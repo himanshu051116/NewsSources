@@ -132,3 +132,23 @@ def test_export_only_held_out_split_without_skipping_full_audit(tmp_path: Path) 
     assert rows[0]["evaluation_split"] == "test"
     assert json.loads(result.stdout)["export_case_count"] == 1
     assert json.loads(result.stdout)["case_count"] == 2
+
+
+def test_malformed_field_types_fail_closed_without_tracebacks(tmp_path: Path) -> None:
+    for field, value in (("dataset_kind", []), ("dataset_kind", {}),
+                         ("dataset_kind", None)):
+        data = _manifest()
+        data[field] = value
+        result = _run(tmp_path, data)
+        assert result.returncode == 2
+        assert "Traceback" not in result.stderr
+    for part in ("split", "reviews"):
+        data = _manifest()
+        if part == "split":
+            data["cases"][0]["split"] = []
+        else:
+            data["cases"][0]["reviews"][0]["label"] = []
+        result = _run(tmp_path, data)
+        assert result.returncode == 2
+        assert "Traceback" not in result.stderr
+
