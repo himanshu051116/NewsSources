@@ -207,3 +207,47 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
  .audit-actions button{width:100%}
  .bench-tabs{gap:20px}
 }
+
+
+/* v0.4 — editorial lineage explorer. No external assets or animation dependencies. */
+.lineage-summary{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;margin:20px 0 8px;background:#203c42;border:1px solid #4d6e66;border-radius:5px;color:#c3d6d2;font-size:11px;line-height:1.65}
+.lineage-summary strong{color:#e7f2da}
+.lineage-summary__dot{display:block;flex:none;width:9px;height:9px;margin-top:5px;border-radius:50%;background:#caefa3;box-shadow:0 0 0 5px #caefa316}
+.lineage-chart{gap:0;padding:20px 10px 12px}
+.lineage-chart .lineage-node{transition:background .15s,border-color .15s,box-shadow .15s,transform .15s;min-height:78px;position:relative}
+.lineage-chart .lineage-node:hover{transform:translateY(-2px)}
+.lineage-chart .lineage-node.is-selected{box-shadow:0 0 0 2px #caefa3,0 7px 25px #07171f66;border-color:#caefa3}
+.lineage-chart .lineage-node[aria-pressed="true"]::after{content:"SELECTED";position:absolute;top:-11px;right:10px;color:#1f392e;background:#caefa3;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:900;letter-spacing:.08em}
+.lineage-chart .lineage-node--primary{max-width:340px}
+.lineage-chart .lineage-node--update{max-width:340px}
+.lineage-chart .lineage-satellites{gap:18px;z-index:1}
+.lineage-chart .lineage-satellites .lineage-node{max-width:260px;flex:1;min-width:0}
+.lineage-chart .lineage-branch{background:none;width:min(72%,370px);height:50px;position:relative;margin:0 auto;flex:none;text-align:center}
+.lineage-chart .lineage-branch span{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;top:12px;color:#afcbb8;font-size:8px;font-weight:800;letter-spacing:.11em;background:#10212b;padding:1px 8px}
+.lineage-chart .lineage-branch--fork::before{content:"";position:absolute;top:0;left:50%;height:22px;border-left:1px solid #b8dba1}
+.lineage-chart .lineage-branch--fork::after{content:"";position:absolute;left:0;right:0;bottom:0;height:17px;border:1px solid #668f83;border-bottom:0;border-radius:7px 7px 0 0}
+.lineage-chart .lineage-branch--revision{height:55px;width:2px;border-left:2px dashed #d09e85;margin:0 auto 2px}
+.lineage-chart .lineage-branch--revision span{color:#e3aa8b;background:#10212b;top:19px}
+.lineage-inspector{border:1px solid #46666b;border-radius:6px;background:linear-gradient(140deg,#203b45,#17303a);padding:20px 22px;margin:14px 0 8px}
+.lineage-inspector__head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:9px;letter-spacing:.13em;font-weight:800;color:#c1e6a4}
+.lineage-inspector__head span+span{color:#9bb8bf}
+.lineage-inspector h4{font:400 clamp(22px,2.5vw,29px)/1.23 var(--serif);margin:13px 0;color:#fff;letter-spacing:-.025em}
+.lineage-inspector__source{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:11px}
+.lineage-inspector__source span{font-size:9px;letter-spacing:.12em;color:#91abb4;font-weight:800}
+.lineage-inspector__source strong{color:#dcece7}
+.lineage-inspector__note{color:#b2c7ca;font-size:11px;line-height:1.75;margin:0 0 17px}
+.lineage-open-record{background:#cdeca7;color:#1c3b32;border:1px solid #cdeca7;border-radius:4px;min-height:41px;padding:10px 14px;font-size:11px;font-weight:800}
+.lineage-open-record:hover{background:#e0f8bd}
+.lineage-open-record:focus-visible{outline:3px solid #f39871;outline-offset:3px}
+@media(max-width:520px){
+ .lineage-summary{padding:12px 11px}
+ .lineage-chart{padding-left:0;padding-right:0}
+ .lineage-chart .lineage-satellites{gap:10px}
+ .lineage-chart .lineage-satellites .lineage-node{width:50%;padding:13px 9px;min-height:104px}
+ .lineage-chart .lineage-satellites .lineage-node strong{font-size:11px}
+ .lineage-chart .lineage-branch{width:76%}
+ .lineage-chart .lineage-branch span{letter-spacing:.04em;font-size:7px}
+ .lineage-inspector{padding:16px 14px}
+ .lineage-inspector__head{font-size:8px}
+ .lineage-open-record{width:100%}
+}

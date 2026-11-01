@@ -124,7 +124,7 @@
         <div class="workbench" aria-label="Interactive fictional news research workbench">
           <div class="workbench__topbar">
             <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
-            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.3</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.4</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
           </div>
           <div class="case-briefing" aria-label="Fictional case briefing">
             <div class="case-briefing__main">
@@ -169,16 +169,25 @@
               </div>
               <div id="panel-lineage" class="bench-panel bench-panel--subview" role="tabpanel" tabindex="0" aria-labelledby="tab-lineage" hidden>
                 <span class="small-label">HOW MANY INDEPENDENT SOURCES?</span><h3>The source graph matters.</h3><p class="subview__intro">Three items repeating the same initial notice are not three independent confirmations. This diagram shows the fictional relationship for this exhibit.</p>
-                <div class="lineage-chart" aria-label="Select a fictional source to inspect it">
-                  <button class="lineage-node lineage-node--primary" type="button" data-select-record="SRC-001"><span>PRIMARY RECORD · INSPECT ↗</span><strong>Civic Notices Office</strong><small>Notice 001 · original document</small></button>
-                  <div class="lineage-branch" aria-hidden="true"></div>
+                <div class="lineage-summary" role="note"><span class="lineage-summary__dot" aria-hidden="true"></span><span><strong>1 originating notice</strong> underlies both reports. A later revision belongs to that same issuing office.</span></div>
+                <div class="lineage-chart" role="group" aria-label="Explore the four fictional source records">
+                  <button class="lineage-node lineage-node--primary is-selected" type="button" data-lineage-record="SRC-001" aria-pressed="true"><span>ORIGIN · SRC-001</span><strong>Civic Notices Office</strong><small>08 AUG · Initial public notice</small></button>
+                  <div class="lineage-branch lineage-branch--fork" aria-hidden="true"><span>ATTRIBUTED TO THE SAME NOTICE</span></div>
                   <div class="lineage-satellites">
-                    <button class="lineage-node" type="button" data-select-record="SRC-002"><span>DERIVED · INSPECT ↗</span><strong>Metro Desk</strong><small>References notice 001</small></button>
-                    <button class="lineage-node" type="button" data-select-record="SRC-003"><span>DERIVED · INSPECT ↗</span><strong>Regional Wire</strong><small>Repeats notice 001</small></button>
+                    <button class="lineage-node" type="button" data-lineage-record="SRC-002" aria-pressed="false"><span>DERIVED · SRC-002</span><strong>Metro Desk</strong><small>09 AUG · References the notice</small></button>
+                    <button class="lineage-node" type="button" data-lineage-record="SRC-003" aria-pressed="false"><span>DERIVED · SRC-003</span><strong>Regional Wire</strong><small>10 AUG · No new document</small></button>
                   </div>
-                  <button class="lineage-node lineage-node--update" type="button" data-select-record="SRC-004" data-compare="true"><span>REVISION · COMPARE ↗</span><strong>Updated public notice</strong><small>See the corrected allocation</small></button>
+                  <div class="lineage-branch lineage-branch--revision" aria-hidden="true"><span>ISSUER REVISION · SAME SOURCE</span></div>
+                  <button class="lineage-node lineage-node--update" type="button" data-lineage-record="SRC-004" aria-pressed="false"><span>REVISED · SRC-004</span><strong>Updated public notice</strong><small>12 AUG · 240 becomes 215</small></button>
                 </div>
-                <p class="subview__foot">Select any record to inspect its passage. These relationships are invented; real evidence requires original captures, provenance checks and human review.</p>
+                <section class="lineage-inspector" aria-label="Selected source detail">
+                  <div class="lineage-inspector__head"><span id="lineage-detail-kind">ORIGINAL / PUBLIC NOTICE</span><span id="lineage-detail-id">SRC-001</span></div>
+                  <h4 id="lineage-detail-title">Transit corridor notice: draft route and estimate released</h4>
+                  <p class="lineage-inspector__source"><span>ISSUED BY</span> <strong id="lineage-detail-source">Civic Notices Office</strong></p>
+                  <p id="lineage-detail-note" class="lineage-inspector__note">The original notice is the shared origin for the fictional case.</p>
+                  <button id="lineage-open-record" class="lineage-open-record" type="button">Inspect selected passage ↗</button>
+                </section>
+                <p class="subview__foot">Select a node to examine its recorded relationship, then open the passage. These links are fictional editorial examples, not proof of the underlying facts.</p>
               </div>
               <div id="panel-timeline" class="bench-panel bench-panel--subview" role="tabpanel" tabindex="0" aria-labelledby="tab-timeline" hidden>
                 <span class="small-label">FICTIONAL VERSION CHRONOLOGY</span><h3>Changes shouldn't disappear.</h3><p class="subview__intro">An evolving report has multiple clocks: original publication, subsequent reporting, observed modifications, and retrieval time.</p>

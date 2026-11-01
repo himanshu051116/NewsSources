@@ -59,7 +59,10 @@ def check() -> None:
     assert "https://himanshu051116.github.io/NewsSources/" in html
     assert 'data-filter="derived"' in html, "Derived reports must have an explicit filter"
     assert len(re.findall(r'data-jump="SRC-\d{3}"', html)) == 3
-    assert len(re.findall(r'data-select-record="SRC-\d{3}"', html)) == 4
+    assert len(re.findall(r'data-lineage-record="SRC-\d{3}"', html)) == 4
+    assert 'id="lineage-open-record"' in html
+    assert all(name in p.ids for name in ("lineage-detail-kind", "lineage-detail-id",
+                                         "lineage-detail-title", "lineage-detail-note"))
     assert 'id="reset-workbench"' in html
     assert 'id="comparison-panel"' in html
     assert 'id="tab-audit"' in html and 'id="panel-audit"' in html
@@ -85,16 +88,16 @@ def check() -> None:
                     "data-claim", '"audit"', 'CLAIMS.find'):
         assert feature in js, f"Missing claim audit behavior: {feature}"
     assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
-    for feature in ("data-select-record", "data-jump", "timeline-select", "selectRecord",
-                    "reset-workbench", "renderMarkedExcerpt"):
+    for feature in ("data-lineage-record", "renderLineageInspector", "lineage-open-record",
+                    "data-jump", "timeline-select", "selectRecord", "reset-workbench",
+                    "renderMarkedExcerpt"):
         assert feature in js, f"Missing interactive case behavior: {feature}"
-    selector_all = '$$' + '("[data-select-record]").forEach'
-    selector_one = '$' + '("[data-select-record]").forEach'
-    assert selector_one not in js.replace(selector_all, ''), (
-        "Record selector must return a collection before forEach; querySelector crashes the workbench"
-    )
-    assert js.count(selector_all) == 2, (
-        "Both record-selection listeners and selection-state updates must iterate all controls"
+    lineage_all = '$$' + '("[data-lineage-record]").forEach'
+    assert js.count(lineage_all) == 2, "Inspector and node listeners must use collection selectors"
+    claim_all = '$$' + '("[data-claim]").forEach'
+    assert js.count(claim_all) == 2, "Audit card listeners and rendering must use collection selectors"
+    assert not re.search(r'(?<![$])[$][(][^)]*[)][.]forEach[(]', js), (
+        "querySelector returns one element; forEach requires querySelectorAll"
     )
     filter_all = '$$' + '("[data-filter]").forEach'
     filter_one = '$' + '("[data-filter]").forEach'
@@ -108,7 +111,7 @@ def check() -> None:
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: assets, four tabs, claim audit, comparison, record selectors, privacy and responsive design")
+    print("PASS: assets, four tabs, interactive lineage, claim audit, comparisons, privacy, selectors, responsive CSS")
 
 
 if __name__ == "__main__":

@@ -76,7 +76,7 @@ const CLAIMS = Object.freeze([
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id};
+const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id};
 const list = $("#record-list");
 const count = $("#record-count");
 const search = $("#record-search");
@@ -152,11 +152,6 @@ function renderDetail() {
   compare.disabled = !r;
   compare.setAttribute("aria-expanded", String(!$("#comparison-panel").hidden));
   if (r && !$("#comparison-panel").hidden) renderComparison();
-  $$("[data-select-record]").forEach((button) => {
-    const selected = !!r && button.dataset.selectRecord === r.id;
-    button.classList.toggle("is-selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
 }
 // Highlight only the known fictional allocation change. Never interpolate article text as HTML.
 function renderMarkedExcerpt(id, passage, needle) {
@@ -207,6 +202,8 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
     });
   }
   state.selected = id;
+  state.lineageSelected = id;
+  renderLineageInspector();
   hideComparison();
   setView("analysis");
   renderRecordList();
@@ -234,9 +231,24 @@ function setView(view, focusTab = false) {
   }
   if (focusTab) document.getElementById("tab-" + view).focus();
 }
+function renderLineageInspector() {
+  const record = RECORDS.find((item) => item.id === state.lineageSelected) || RECORDS[0];
+  $$("[data-lineage-record]").forEach((button) => {
+    const chosen = button.dataset.lineageRecord === record.id;
+    button.classList.toggle("is-selected", chosen);
+    button.setAttribute("aria-pressed", String(chosen));
+  });
+  put("lineage-detail-kind", record.kindLabel);
+  put("lineage-detail-id", record.id);
+  put("lineage-detail-title", record.title);
+  put("lineage-detail-source", record.source);
+  put("lineage-detail-note", record.note);
+  put("lineage-open-record", record.kind === "revision" ? "Compare revision with original ↗" : "Inspect selected passage ↗");
+}
+
 function renderClaim() {
   const claim = CLAIMS.find((item) => item.id === state.claim) || CLAIMS[0];
-  $("[data-claim]").forEach((button) => {
+  $$("[data-claim]").forEach((button) => {
     const active = button.dataset.claim === claim.id;
     button.classList.toggle("is-current", active);
     button.setAttribute("aria-pressed", String(active));
@@ -268,7 +280,7 @@ function renderTimeline() {
 }
 
 // Claim selection only changes local labels and actions; no network or browser state.
-$("[data-claim]").forEach((button) => {
+$$("[data-claim]").forEach((button) => {
   button.addEventListener("click", () => {
     state.claim = button.dataset.claim;
     renderClaim();
@@ -328,12 +340,17 @@ $("#close-compare").addEventListener("click", () => {
   hideComparison();
   $("#compare-button").focus();
 });
-$$("[data-select-record]").forEach((button) => {
-  button.addEventListener("click", () => selectRecord(button.dataset.selectRecord, {
-    compare: button.dataset.compare === "true", focus:true
-  }));
+$$("[data-lineage-record]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.lineageSelected = button.dataset.lineageRecord;
+    renderLineageInspector();
+  });
 });
-$("[data-jump]").forEach((button) => {
+$("#lineage-open-record").addEventListener("click", () => {
+  const selected = state.lineageSelected;
+  selectRecord(selected, {compare: selected === "SRC-004", focus:true});
+});
+$$("[data-jump]").forEach((button) => {
   button.addEventListener("click", () => selectRecord(button.dataset.jump, {
     compare: button.dataset.compare === "true", focus:true
   }));
@@ -344,7 +361,9 @@ $("#reset-workbench").addEventListener("click", () => {
   search.value = "";
   state.selected = RECORDS[0].id;
   state.claim = CLAIMS[0].id;
+  state.lineageSelected = RECORDS[0].id;
   renderClaim();
+  renderLineageInspector();
   $$("[data-filter]").forEach((button) => {
     const active = button.dataset.filter === "all";
     button.classList.toggle("is-active", active);
@@ -376,6 +395,7 @@ document.addEventListener("keydown", (event) => {
 });
 $("#site-year").textContent = String(new Date().getFullYear());
 renderClaim();
+renderLineageInspector();
 renderTimeline();
 renderRecordList();
 setView("analysis");

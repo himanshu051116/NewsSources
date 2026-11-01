@@ -34,10 +34,39 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check showcase/app.js
 
+  browser-smoke:
+    name: Browser regression (desktop and mobile)
+    runs-on: ubuntu-24.04
+    needs: validate
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright test dependency
+        working-directory: showcase/tests
+        run: npm install --no-audit --no-fund --ignore-scripts --package-lock=false
+      - name: Install Chromium and system libraries
+        working-directory: showcase/tests
+        run: npx playwright install --with-deps chromium
+      - name: Run browser-level workbench checks
+        working-directory: showcase/tests
+        run: npm test
+      - name: Preserve failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-browser-failure-traces
+          path: showcase/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   deploy:
     name: Publish GitHub Pages
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: validate
+    needs: [validate, browser-smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,10 +80,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+      - name: Prepare a public-only site bundle
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/newssources-pages"
+          for file in index.html app.js styles.css favicon.svg .nojekyll; do
+            cp "showcase/$file" "$RUNNER_TEMP/newssources-pages/$file"
+          done
       - name: Upload only public static files
         uses: actions/upload-pages-artifact@v4
         with:
-          path: showcase
+          path: ${{ runner.temp }}/newssources-pages
       - name: Deploy static site
         id: deployment
         uses: actions/deploy-pages@v4
