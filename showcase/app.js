@@ -345,7 +345,7 @@ $("#reset-workbench").addEventListener("click", () => {
   state.selected = RECORDS[0].id;
   state.claim = CLAIMS[0].id;
   renderClaim();
-  $("[data-filter]").forEach((button) => {
+  $$("[data-filter]").forEach((button) => {
     const active = button.dataset.filter === "all";
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
