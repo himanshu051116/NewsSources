@@ -76,7 +76,7 @@ const CLAIMS = Object.freeze([
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id, timelineSelected: RECORDS[0].id};
+const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id, timelineSelected: RECORDS[0].id, coverageLeft: "SRC-001", coverageRight: "SRC-002"};
 const list = $("#record-list");
 const count = $("#record-count");
 const search = $("#record-search");
@@ -221,9 +221,9 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
   }
 }
 function setView(view, focusTab = false) {
-  if (!["analysis", "lineage", "timeline", "audit"].includes(view)) return;
+  if (!["analysis", "lineage", "timeline", "audit", "coverage"].includes(view)) return;
   state.view = view;
-  for (const v of ["analysis", "lineage", "timeline", "audit"]) {
+  for (const v of ["analysis", "lineage", "timeline", "audit", "coverage"]) {
     const selected = v === view;
     const tab = document.getElementById("tab-" + v);
     document.getElementById("panel-" + v).hidden = !selected;
@@ -334,6 +334,79 @@ $("#timeline-open").addEventListener("click", () => {
   if (record) selectRecord(record.id, {compare: record.kind === "revision", focus:true});
 });
 
+// Coverage comparisons are editorial annotations over the four invented captures.
+// Identical wording or common attribution never implies independently verified facts.
+function renderCoverage() {
+  const left = RECORDS.find((record) => record.id === state.coverageLeft) || RECORDS[0];
+  const right = RECORDS.find((record) => record.id === state.coverageRight) || RECORDS[1];
+  $("#coverage-left").value = left.id;
+  $("#coverage-right").value = right.id;
+  for (const [side, record] of [["left", left], ["right", right]]) {
+    put("coverage-" + side + "-id", record.id);
+    put("coverage-" + side + "-kind", record.kindLabel);
+    put("coverage-" + side + "-title", record.title);
+    put("coverage-" + side + "-source", record.source + " · " + record.date);
+    put("coverage-" + side + "-lineage", record.lineage);
+  }
+
+  const sameRecord = left.id === right.id;
+  const includesRevision = left.kind === "revision" || right.kind === "revision";
+  // Highlight an explicitly recorded change, not an inferred truthfulness score.
+  renderMarkedExcerpt("coverage-left-excerpt", left.excerpt,
+    !sameRecord && includesRevision ? (left.kind === "revision" ? "215" : "240") : null);
+  renderMarkedExcerpt("coverage-right-excerpt", right.excerpt,
+    !sameRecord && includesRevision ? (right.kind === "revision" ? "215" : "240") : null);
+
+  let heading, explanation, label;
+  if (sameRecord) {
+    heading = "Same capture selected twice";
+    explanation = "Both panels show " + left.id + ". Select a different record to compare reporting or revisions. A duplicate capture provides no new corroboration.";
+    label = "SAME RECORD";
+  } else if (includesRevision) {
+    heading = "A revised figure; the same originating source";
+    explanation = "The fictional issuing office changed the draft allocation from 240 to 215 units. Both captures trace to the same originating notice; older reports may still cite 240. This change does not independently verify the proposal.";
+    label = "REVISION";
+  } else if (left.kind === "derived" && right.kind === "derived") {
+    heading = "Two reports; one originating document";
+    explanation = "Metro Desk and Regional Wire repeat the same invented public notice. These are separate publications, not two independent confirmations of the figures.";
+    label = "SHARED ORIGIN";
+  } else {
+    heading = "Shared originating notice";
+    explanation = "The follow-up report attributes its figures to the same original public notice. Its existence is not a second independent source for the claim.";
+    label = "SHARED ORIGIN";
+  }
+  put("coverage-relationship", heading);
+  put("coverage-interpretation", explanation);
+  put("coverage-class", label);
+  $("#coverage-class").className = "coverage-finding__chip coverage-finding__chip--" +
+    (sameRecord ? "same" : includesRevision ? "revision" : "shared");
+}
+
+$("#coverage-left").addEventListener("change", (event) => {
+  if (!RECORDS.some((record) => record.id === event.target.value)) return;
+  state.coverageLeft = event.target.value;
+  renderCoverage();
+});
+$("#coverage-right").addEventListener("change", (event) => {
+  if (!RECORDS.some((record) => record.id === event.target.value)) return;
+  state.coverageRight = event.target.value;
+  renderCoverage();
+});
+$("#coverage-swap").addEventListener("click", () => {
+  const priorLeft = state.coverageLeft;
+  state.coverageLeft = state.coverageRight;
+  state.coverageRight = priorLeft;
+  renderCoverage();
+});
+$("#coverage-open-left").addEventListener("click", () => {
+  const record = RECORDS.find((item) => item.id === state.coverageLeft);
+  if (record) selectRecord(record.id, {compare: record.kind === "revision", focus:true});
+});
+$("#coverage-open-right").addEventListener("click", () => {
+  const record = RECORDS.find((item) => item.id === state.coverageRight);
+  if (record) selectRecord(record.id, {compare: record.kind === "revision", focus:true});
+});
+
 // Claim selection only changes local labels and actions; no network or browser state.
 $$("[data-claim]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -373,7 +446,7 @@ search.addEventListener("keydown", (event) => {
 $$("[data-view]").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
   button.addEventListener("keydown", (event) => {
-    const views = ["analysis", "lineage", "timeline", "audit"];
+    const views = ["analysis", "lineage", "timeline", "audit", "coverage"];
     const current = views.indexOf(button.dataset.view);
     let next = current;
     if (event.key === "ArrowRight") next = (current + 1) % views.length;
@@ -418,6 +491,9 @@ $("#reset-workbench").addEventListener("click", () => {
   state.claim = CLAIMS[0].id;
   state.lineageSelected = RECORDS[0].id;
   state.timelineSelected = RECORDS[0].id;
+  state.coverageLeft = "SRC-001";
+  state.coverageRight = "SRC-002";
+  renderCoverage();
   renderClaim();
   renderLineageInspector();
   renderTimelineInspector();
@@ -451,6 +527,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 $("#site-year").textContent = String(new Date().getFullYear());
+renderCoverage();
 renderClaim();
 renderLineageInspector();
 renderTimeline();

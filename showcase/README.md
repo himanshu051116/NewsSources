@@ -5,7 +5,7 @@ This folder is a **separate, static portfolio presentation** for the NewsSources
 ## What visitors can do
 
 - Inspect the project's collection, versioning, source-lineage and analysis workflow.
-- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, and switch between article review, lineage, timeline and claim audit views.
+- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, and switch between article review, lineage, timeline, claim audit and coverage comparison views.
 - Inspect an editorial claim register to distinguish unchanged figures, superseded figures and shared source origins, then jump to the relevant captures.
 - Follow links back to the actual source repository and the implemented-architecture guide.
 
@@ -41,7 +41,7 @@ npx playwright install chromium
 npm test
 ~~~
 
-The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, timeline selection and stepping, passage drilldowns, revision highlighting, keyboard navigation and the absence of remote requests.
+The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, timeline selection and stepping, coverage comparison (shared origin, revisions, duplicate selection, swapping), passage drilldowns, revision highlighting, keyboard navigation and the absence of remote requests.
 
 The GitHub Pages workflow runs the same test suite on pull requests and main; deployment to Pages now depends on successful validation **and** browser smoke tests. The tests are development dependencies only and are not included in the published `showcase/` artifact because the Pages upload step must exclude the `tests/` directory.
 
@@ -56,7 +56,7 @@ The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
 
 The workflow prepares a static deployment of the site. The site does not call the backend, crawlers, databases, live publisher feeds or private services. Browser-test sources live under `showcase/tests/` and are not website features.
 
-### Exhibit v0.5
+### Exhibit v0.6
 - Four **invented** records (one original notice, two derived reports, one revision)
 - A case briefing strip with visible original/derived/revision indicators
 - A fourth workbench tab: claim audit, with three labeled synthetic claims, editorial follow-up questions and source jumps
@@ -64,6 +64,10 @@ The workflow prepares a static deployment of the site. The site does not call th
 - A structured lineage explorer with four selectable source nodes and an evidence inspector
 - Explicit links from one notice to two derived reports and a later same-issuer revision
 - Dedicated source-inspector action to open the selected passage (or compare the revision)
+- A comparison workspace for any two of the four invented source captures, with safe side-by-side passages
+- Attribution-aware explanations for one original notice, two derived reports, a revision, and duplicate selection
+- Explicit highlighting of the fictional 240 → 215 change, without presenting repetition as independent corroboration
+- Swap and drilldown controls, plus a comparison reset integrated into the research desk
 - An interactive four-capture chronology with a selection rail, event inspector, source lineage, editorial notes, and earlier/later navigation
 - Explicit **Inspect passage** / **Compare correction** actions that open the existing article review without duplicating its evidence
 - Safe side-by-side comparison with the fictional 240 → 215 revision highlighted
@@ -76,9 +80,10 @@ Suggested smoke test:
 1. Choose **Claim audit** and switch through all three claim cards; the evidence values and editorial question must update.
 2. Use **Compare revision** from CLM-02; Article review should open SRC-004 with 240 and 215 highlighted.
 3. Filter records to **Derived**, then use the guided source tour and **Reset demo**; neither should throw JavaScript errors.
-4. In **Timeline**, click each of the four fictional captures, use Earlier/Later, and open the final correction to verify the side-by-side 240 → 215 comparison.
-5. Use arrow keys/Home/End between tabs, then press Enter on a timeline capture and check all four views at mobile width.
-6. Confirm that opening the site makes no network calls to publisher or backend APIs.
+4. In **Compare coverage**, compare both derived reports to confirm their shared source; select SRC-004 to see the 240 → 215 revision, swap the records, and compare a record with itself.
+5. In **Timeline**, click each of the four fictional captures, use Earlier/Later, and open the final correction to verify the side-by-side 240 → 215 comparison.
+6. Use arrow keys/Home/End between tabs, then press Enter on a timeline capture and check all five views at mobile width.
+7. Confirm that opening the site makes no network calls to publisher or backend APIs.
 
 
 ## Maintenance
@@ -98,4 +103,4 @@ The application declares a proprietary license in pyproject.toml; publishing thi
 
 ## Upgrade branch sequence
 
-Pages v0.5 builds upon the v0.4 lineage and browser-test work. The new timeline reuses the four synthetic source records and requires no backend, publisher permissions, secrets or browser storage. Review the underlying v0.4 changes before considering the dependent v0.5 work for deployment.
+Pages v0.6 builds on the v0.5 timeline and v0.4 lineage/browser checks. All comparison interpretations use only the four invented records and explicitly do not infer independent evidence or factual truth. No publisher permissions, credentials, secrets, browser storage or backend are needed. Review and merge v0.4, then v0.5, then v0.6; the branches are sequential.

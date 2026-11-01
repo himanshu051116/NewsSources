@@ -46,7 +46,7 @@ def check() -> None:
     p = SiteParser()
     p.feed(html)
     assert p.heading_count == 1, "Expected exactly one page-level h1"
-    assert len(p.tabs) == len(p.panels) == 4, "Four workbench tabs required"
+    assert len(p.tabs) == len(p.panels) == 5, "Five workbench tabs required"
     assert "main" in p.ids and "record-list" in p.ids
     for tab in p.tabs:
         assert tab["aria-controls"] in p.ids
@@ -66,12 +66,17 @@ def check() -> None:
         "timeline-detail-title", "timeline-detail-date", "timeline-detail-note",
         "timeline-detail-lineage", "timeline-prev", "timeline-next", "timeline-open"))
     assert 'id="timeline-prev" aria-label="Previous timeline record" disabled' in html
-    assert 'v 0.5' in html, "Version marker must match the current exhibit"
+    assert 'v 0.6' in html, "Version marker must match the current exhibit"
     assert all(name in p.ids for name in ("lineage-detail-kind", "lineage-detail-id",
                                          "lineage-detail-title", "lineage-detail-note"))
     assert 'id="reset-workbench"' in html
     assert 'id="comparison-panel"' in html
     assert 'id="tab-audit"' in html and 'id="panel-audit"' in html
+    assert 'id="tab-coverage"' in html and 'id="panel-coverage"' in html
+    assert all(name in p.ids for name in ("coverage-left", "coverage-right", "coverage-swap",
+        "coverage-left-excerpt", "coverage-right-excerpt", "coverage-relationship",
+        "coverage-interpretation", "coverage-open-left", "coverage-open-right", "coverage-class"))
+    assert html.count('<option value="SRC-') == 8, "Four source choices in each comparison selector"
     assert 'id="audit-original"' in html and 'id="audit-related"' in html
     assert len(re.findall(r'data-claim="CLM-\d{2}"', html)) == 3, "Three selectable audit claims required"
     assert 'case-briefing' in html, "Case briefing should be visible to all visitors"
@@ -94,7 +99,9 @@ def check() -> None:
                     "data-claim", '"audit"', 'CLAIMS.find'):
         assert feature in js, f"Missing claim audit behavior: {feature}"
     assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
-    for feature in ("data-lineage-record", "renderLineageInspector", "lineage-open-record",
+    for feature in ("renderCoverage", "coverage-left", "coverage-right", "coverage-swap",
+                    "coverage-open-left", "coverage-open-right",
+                    "data-lineage-record", "renderLineageInspector", "lineage-open-record",
                     "data-jump", "timeline-select", "renderTimelineInspector",
                     "chooseTimelineRecord", "timeline-prev", "timeline-next", "timeline-open",
                     "selectRecord", "reset-workbench", "renderMarkedExcerpt"):
@@ -117,10 +124,12 @@ def check() -> None:
     )
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
+    for selector in (".coverage-controls", ".coverage-columns", ".coverage-finding", ".coverage-document"):
+        assert selector in css, f"Missing coverage comparison styling: {selector}"
     for selector in (".chronology__inspector", ".chronology__event", ".chronology__actions"):
         assert selector in css, f"Missing timeline styling: {selector}"
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: assets, four tabs, lineage, timeline inspector, claim audit, privacy, selectors and responsive CSS")
+    print("PASS: assets, five tabs, lineage, timeline, claim audit, coverage comparison, privacy and responsive CSS")
 
 
 if __name__ == "__main__":
