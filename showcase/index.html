@@ -124,7 +124,7 @@
         <div class="workbench" aria-label="Interactive fictional news research workbench">
           <div class="workbench__topbar">
             <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
-            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.4</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.5</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
           </div>
           <div class="case-briefing" aria-label="Fictional case briefing">
             <div class="case-briefing__main">
@@ -191,8 +191,27 @@
               </div>
               <div id="panel-timeline" class="bench-panel bench-panel--subview" role="tabpanel" tabindex="0" aria-labelledby="tab-timeline" hidden>
                 <span class="small-label">FICTIONAL VERSION CHRONOLOGY</span><h3>Changes shouldn't disappear.</h3><p class="subview__intro">An evolving report has multiple clocks: original publication, subsequent reporting, observed modifications, and retrieval time.</p>
-                <ol class="demo-timeline" id="demo-timeline"></ol>
-                <p class="subview__foot">Select a timeline event to inspect its associated source. Dates, publishers and claims here are invented.</p>
+                <div class="chronology">
+                  <div class="chronology__rail">
+                    <div class="chronology__rail-title"><span>CAPTURE HISTORY</span><strong>04 fictional records</strong></div>
+                    <ol class="demo-timeline" id="demo-timeline" aria-label="Select a capture in the fictional timeline"></ol>
+                    <div class="chronology__rail-note"><span aria-hidden="true">↳</span> Two follow-up articles share the same original notice. Multiple reports do not equal independent verification.</div>
+                  </div>
+                  <section class="chronology__inspector" aria-label="Selected timeline event">
+                    <div class="chronology__inspector-top"><span class="chronology__label">SELECTED CAPTURE</span><span id="timeline-detail-index" class="chronology__index">01 / 04</span></div>
+                    <div class="chronology__identity"><span id="timeline-detail-kind" class="chronology__kind">ORIGINAL / PUBLIC NOTICE</span><time id="timeline-detail-date" datetime="2026-08-08">08 AUG 2026</time></div>
+                    <h4 id="timeline-detail-title">Transit corridor notice: draft route and estimate released</h4>
+                    <p class="chronology__summary" id="timeline-detail-text">The primary notice is first published with a draft distance and allocation.</p>
+                    <div class="chronology__metadata"><div><span>ATTRIBUTED SOURCE</span><strong id="timeline-detail-source">Civic Notices Office</strong></div><div><span>EVIDENCE LINEAGE</span><strong id="timeline-detail-lineage">Primary document</strong></div></div>
+                    <div class="chronology__editorial"><span>EDITORIAL CONTEXT</span><p id="timeline-detail-note">The original document is a source record, not independent proof.</p></div>
+                    <div class="chronology__actions">
+                      <button type="button" id="timeline-prev" aria-label="Previous timeline record" disabled>← Earlier</button>
+                      <button type="button" id="timeline-next" aria-label="Next timeline record">Later →</button>
+                      <button type="button" id="timeline-open" class="chronology__open">Inspect passage ↗</button>
+                    </div>
+                  </section>
+                </div>
+                <p class="subview__foot">Each date and publisher in this example is invented. Recorded source revisions are not proof that a proposed project was completed.</p>
               </div>
               <div id="panel-audit" class="bench-panel bench-panel--audit" role="tabpanel" tabindex="0" aria-labelledby="tab-audit" hidden>
                 <div class="audit-intro"><span class="small-label">CLAIM REGISTER / SYNTHETIC CASE</span><h3>Separate the claim from its evidence.</h3><p>Choose a statement to inspect its earlier wording, latest recorded wording and remaining editorial questions. These are invented records, not automated factual verdicts.</p></div>
