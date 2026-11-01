@@ -1,0 +1,60 @@
+name: Pages showcase
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "showcase/**"
+      - ".github/scripts/validate_showcase.py"
+      - ".github/workflows/pages-showcase.yml"
+  push:
+    branches: [main]
+    paths:
+      - "showcase/**"
+      - ".github/scripts/validate_showcase.py"
+      - ".github/workflows/pages-showcase.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-sources-pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate static showcase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Validate local links, labels and accessibility structure
+        run: python3 .github/scripts/validate_showcase.py
+      - name: Check JavaScript syntax
+        run: node --check showcase/app.js
+
+  deploy:
+    name: Publish GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload only public static files
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: showcase
+      - name: Deploy static site
+        id: deployment
+        uses: actions/deploy-pages@v4

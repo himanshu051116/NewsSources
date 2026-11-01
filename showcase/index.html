@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f1921">
+  <meta name="description" content="NewsSources is an evidence-oriented news research system. Explore an interactive, fictional demonstration of article revisions, reporting lineages, and source analysis.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NewsSources — follow the evidence">
+  <meta property="og:description" content="An interactive showcase of source-aware news research. Fictional demonstration content; real project architecture.">
+  <title>NewsSources — follow the evidence</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="topline"><span class="topline__signal" aria-hidden="true"></span> PROJECT SHOWCASE <span aria-hidden="true">/</span> STATIC INTERACTIVE PREVIEW <span class="topline__right">No live news. No account required.</span></div>
+  <header class="site-header" id="top">
+    <div class="container site-header__inside">
+      <a class="brand" href="#top" aria-label="NewsSources, home">
+        <span class="brand__mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>news<span class="brand__last">sources</span><span class="brand__dot">.</span></span>
+      </a>
+      <button class="menu-toggle" type="button" id="menu-toggle" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span class="sr-only">Toggle navigation</span></button>
+      <nav class="primary-nav" id="primary-nav" aria-label="Primary navigation">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#method">Method</a>
+        <a href="#demo">Explore preview</a>
+        <a class="nav-github" href="https://github.com/himanshu051116/NewsSources" target="_blank" rel="noopener noreferrer">Source on GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container hero__layout">
+        <div class="hero__content">
+          <div class="eyebrow"><span class="eyebrow__line"></span> AN OPEN WINDOW INTO THE NEWS RECORD</div>
+          <h1>Don't just read the news.<br><em>Trace it.</em></h1>
+          <p class="hero__lead">NewsSources brings source collection, article history, and evidence-linked review into one research workflow—so a claim can be followed back to the material that carried it.</p>
+          <div class="hero__actions">
+            <a class="button button--orange" href="#demo">Explore the interactive preview <span aria-hidden="true">↗</span></a>
+            <a class="button button--ghost" href="#method">How it works <span aria-hidden="true">↓</span></a>
+          </div>
+          <div class="hero__truth"><span class="live-dot"></span><span><strong>Showcase mode.</strong> The interactive records are fictional. The software architecture is documented in the repository.</span></div>
+        </div>
+        <div class="hero__visual" aria-label="Illustration of linked source records and revision history">
+          <div class="hero__graphic-grid" aria-hidden="true"></div>
+          <div class="signal-caption"><span class="signal-caption__line"></span> SIGNAL / SOURCE / CONTEXT</div>
+          <div class="hero-record hero-record--first">
+            <div class="hero-record__top"><span>01 / ORIGINAL RECORD</span><span class="micro-dot"></span></div>
+            <div class="hero-record__headline">A public notice enters the record</div>
+            <div class="hero-record__meta">PRIMARY DOCUMENT <span>·</span> VERSION 01</div>
+          </div>
+          <div class="hero-record hero-record--second">
+            <div class="hero-record__top"><span>02 / FOLLOW-UP</span><span class="micro-dot micro-dot--coral"></span></div>
+            <div class="hero-record__headline">Three articles point to one source</div>
+            <div class="hero-record__meta">SHARED LINEAGE <span>·</span> NOT 3 CONFIRMATIONS</div>
+          </div>
+          <div class="hero-record hero-record--third">
+            <div class="hero-record__top"><span>03 / REVISION</span><span class="micro-dot micro-dot--green"></span></div>
+            <div class="hero-record__headline">A changed figure gets its own history</div>
+            <div class="hero-record__meta">CAPTURED CHANGE <span>·</span> REVIEW REQUIRED</div>
+          </div>
+          <svg class="hero-paths" viewBox="0 0 510 470" fill="none" aria-hidden="true"><path d="M258 120 L258 176 Q258 191 276 191 H316" stroke="#c4f0a4" stroke-width="1.5" stroke-dasharray="5 7"/><path d="M336 290 V326 Q336 342 316 342 H276" stroke="#c4f0a4" stroke-width="1.5" stroke-dasharray="5 7"/><circle cx="258" cy="120" r="4" fill="#d2f5b2"/><circle cx="336" cy="290" r="4" fill="#d2f5b2"/></svg>
+          <p class="hero__visual-foot">FICTITIOUS EXAMPLE <span>·</span> NO PUBLISHER DATA</p>
+        </div>
+      </div>
+      <div class="container hero__bottom">
+        <div><span>01</span><strong>Collect</strong><small>Feeds · sitemaps · pages · PDFs</small></div>
+        <div><span>02</span><strong>Preserve</strong><small>Versions · metadata · provenance</small></div>
+        <div><span>03</span><strong>Investigate</strong><small>Events · claims · historical context</small></div>
+      </div>
+    </section>
+
+    <section class="section section--light" id="capabilities">
+      <div class="container">
+        <div class="section-heading">
+          <div><div class="section-kicker"><span>01 / THE PROBLEM</span></div><h2>One story. Many versions.<br><span class="muted-serif">Too little context.</span></h2></div>
+          <p>The challenge isn't finding another headline. It's knowing which document came first, what changed later, and whether apparent corroboration rests on one underlying source.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card"><div class="feature-card__num">A / 01</div><div class="feature-icon" aria-hidden="true">⌁</div><h3>Collection with context</h3><p>Publisher feeds, sitemaps, and permitted article URLs enter a scheduled collection pipeline. Failures and extraction warnings remain visible.</p><span class="feature-card__line"></span><span class="feature-card__detail">SOURCE REGISTRY · FETCH STATUS</span></article>
+          <article class="feature-card"><div class="feature-card__num">B / 02</div><div class="feature-icon" aria-hidden="true">◷</div><h3>Versions, not overwrites</h3><p>Article snapshots and revisions help track updates and corrections over time instead of collapsing every capture into one latest text.</p><span class="feature-card__line"></span><span class="feature-card__detail">ARTICLE HISTORY · REVISION TRAIL</span></article>
+          <article class="feature-card"><div class="feature-card__num">C / 03</div><div class="feature-icon" aria-hidden="true">◎</div><h3>Evidence you can inspect</h3><p>Source passages, shared reporting lineages, and document-page references support manual review—without turning citations into verdicts.</p><span class="feature-card__line"></span><span class="feature-card__detail">CLAIMS · LINEAGE · PDF PROVENANCE</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--process" id="method">
+      <div class="container process-layout">
+        <div class="process-heading"><div class="section-kicker"><span>02 / UNDER THE HOOD</span></div><h2>From source<br>to <em>evidence trail.</em></h2><p>These are components in the checked-in Python application. Optional services and OCR require their own configuration.</p><a href="https://github.com/himanshu051116/NewsSources/blob/main/docs/IMPLEMENTED_ARCHITECTURE.md" target="_blank" rel="noopener noreferrer" class="text-link">Read the implemented architecture <span aria-hidden="true">↗</span></a></div>
+        <div class="process-steps" role="list">
+          <div class="process-step" role="listitem"><span class="process-step__id">01</span><div><h3>Discover &amp; schedule</h3><p>Registry, feeds, sitemaps, URL frontier and host-aware collection policies.</p></div><span class="process-step__symbol" aria-hidden="true">↙</span></div>
+          <div class="process-step" role="listitem"><span class="process-step__id">02</span><div><h3>Extract &amp; qualify</h3><p>HTML text or bounded PDF extraction; optional OCR, partial-result markers and retry handling.</p></div><span class="process-step__symbol" aria-hidden="true">↙</span></div>
+          <div class="process-step" role="listitem"><span class="process-step__id">03</span><div><h3>Store &amp; connect</h3><p>PostgreSQL article records, revisions, provenance, and candidate event relationships.</p></div><span class="process-step__symbol" aria-hidden="true">↙</span></div>
+          <div class="process-step" role="listitem"><span class="process-step__id">04</span><div><h3>Review &amp; retrieve</h3><p>Source-linked claims, historical context, and an analyst-facing FastAPI reader.</p></div><span class="process-step__symbol" aria-hidden="true">↙</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--demo" id="demo">
+      <div class="container">
+        <div class="demo-title-row"><div><div class="section-kicker"><span>03 / INTERACTIVE EXHIBIT</span></div><h2>See how a story <em>evolves.</em></h2></div><div class="demo-disclaimer"><span class="demo-disclaimer__square" aria-hidden="true"></span><strong>SYNTHETIC WORKBENCH</strong><span> Fictional sources and records. This is not a live backend connection.</span></div></div>
+        <div class="workbench" aria-label="Interactive fictional news research workbench">
+          <div class="workbench__topbar">
+            <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.1</span></div>
+          </div>
+          <div class="workbench__body">
+            <aside class="workbench__sidebar" aria-label="Fictional source records">
+              <div class="sidebar__head"><div><span class="small-label">SOURCE RECORDS</span><h3>Transit notice</h3></div><span class="record-count" id="record-count" aria-live="polite">4 records</span></div>
+              <label class="search-wrap"><span class="sr-only">Search fictional records</span><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><input id="record-search" type="search" placeholder="Filter by headline or source" autocomplete="off"></label>
+              <div class="filter-row" role="group" aria-label="Record type">
+                <button class="filter-pill is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+                <button class="filter-pill" type="button" data-filter="revision" aria-pressed="false">Revisions</button>
+                <button class="filter-pill" type="button" data-filter="original" aria-pressed="false">Original</button>
+              </div>
+              <div id="record-list" class="record-list" aria-live="polite"><p class="record-loading">Enable JavaScript to explore the fictional source records.</p></div>
+              <div class="sidebar__foot"><span class="small-signal" aria-hidden="true"></span> Four invented records · no live feeds</div>
+            </aside>
+            <div class="workbench__main">
+              <div class="bench-tabs" role="tablist" aria-label="Investigation views">
+                <button type="button" class="bench-tab is-current" id="tab-analysis" role="tab" aria-controls="panel-analysis" aria-selected="true" tabindex="0" data-view="analysis">Article review</button>
+                <button type="button" class="bench-tab" id="tab-lineage" role="tab" aria-controls="panel-lineage" aria-selected="false" tabindex="-1" data-view="lineage">Source lineage</button>
+                <button type="button" class="bench-tab" id="tab-timeline" role="tab" aria-controls="panel-timeline" aria-selected="false" tabindex="-1" data-view="timeline">Timeline</button>
+              </div>
+              <div id="panel-analysis" class="bench-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-analysis">
+                <div class="analysis__eyebrow"><span id="detail-kind">CORRECTION / REVIEW</span><span id="detail-date">—</span></div>
+                <h3 id="detail-title" class="analysis__title">Select a record to inspect its source note.</h3>
+                <div class="analysis__source"><span>REPORTED BY</span><strong id="detail-source">—</strong><span class="analysis__source-divider">/</span><span id="detail-id">—</span></div>
+                <div class="evidence-card"><div class="evidence-card__top"><span><span class="evidence-card__bullet" aria-hidden="true"></span> CAPTURED PASSAGE</span><span>FICTIONAL EXCERPT</span></div><blockquote id="detail-excerpt">A source excerpt will appear here.</blockquote></div>
+                <div class="insight-box"><div><span class="insight-box__label">EDITORIAL NOTE</span><p id="detail-note"></p></div><span class="insight-box__symbol" aria-hidden="true">↗</span></div>
+                <div class="analysis__bottom"><div><span class="small-label">LINEAGE</span><strong id="detail-lineage">—</strong></div><div><span class="small-label">STATUS</span><strong id="detail-status">—</strong></div><button class="compare-button" id="compare-button" type="button" aria-expanded="false" aria-controls="comparison-panel">Compare wording <span aria-hidden="true">↗</span></button></div>
+                <section id="comparison-panel" class="comparison-panel" hidden aria-label="Comparison with the original record"><div class="comparison__head">ORIGINAL VS SELECTED <button id="close-compare" type="button" aria-label="Close comparison">×</button></div><div class="comparison__grid"><div><span>ORIGINAL RECORD</span><p id="compare-original"></p></div><div><span>SELECTED CAPTURE</span><p id="compare-selected"></p></div></div><p class="comparison__note" id="compare-note"></p></section>
+              </div>
+              <div id="panel-lineage" class="bench-panel bench-panel--subview" role="tabpanel" tabindex="0" aria-labelledby="tab-lineage" hidden>
+                <span class="small-label">HOW MANY INDEPENDENT SOURCES?</span><h3>The source graph matters.</h3><p class="subview__intro">Three items repeating the same initial notice are not three independent confirmations. This diagram shows the fictional relationship for this exhibit.</p>
+                <div class="lineage-chart"><div class="lineage-node lineage-node--primary"><span>PRIMARY RECORD</span><strong>Civic Notices Office</strong><small>Notice 001 · original document</small></div><div class="lineage-branch" aria-hidden="true"></div><div class="lineage-satellites"><div class="lineage-node"><span>DERIVED</span><strong>Metro Desk</strong><small>References notice 001</small></div><div class="lineage-node"><span>DERIVED</span><strong>Regional Wire</strong><small>Repeats notice 001</small></div></div><div class="lineage-node lineage-node--update"><span>REVISION</span><strong>Updated public notice</strong><small>Corrections reviewed separately</small></div></div>
+                <p class="subview__foot">Relationships here are illustrative. Production evidence requires captured sources, provenance checks and human review.</p>
+              </div>
+              <div id="panel-timeline" class="bench-panel bench-panel--subview" role="tabpanel" tabindex="0" aria-labelledby="tab-timeline" hidden>
+                <span class="small-label">FICTIONAL VERSION CHRONOLOGY</span><h3>Changes shouldn't disappear.</h3><p class="subview__intro">An evolving report has multiple clocks: original publication, subsequent reporting, observed modifications, and retrieval time.</p>
+                <ol class="demo-timeline" id="demo-timeline"></ol>
+                <p class="subview__foot">All dates, publishers and claims in this timeline are invented for this demonstration.</p>
+              </div>
+            </div>
+          </div>
+          <div class="workbench__bottom"><span>INTERACTION: choose records · filter · compare · explore lineage</span><span>NOT A LIVE FACT-CHECKER</span></div>
+        </div>
+        <div class="demo-after"><span class="asterisk">✳</span><p><strong>What this preview is—and isn't.</strong> The interface is a self-contained illustration of NewsSources research concepts. It does not connect to publisher feeds, the database, or the running FastAPI service. The underlying project remains a separate Python application.</p></div>
+      </div>
+    </section>
+
+    <section class="section section--closing">
+      <div class="container closing-grid">
+        <div class="closing-left"><div class="section-kicker"><span>04 / PROJECT NOTES</span></div><h2>Built for questions<br>that deserve <em>sources.</em></h2><p>The repository contains a Python FastAPI backend, PostgreSQL migrations, collection workers, HTML and PDF extraction, source-aware analysis, and an analyst reader. Its real-world editorial performance still needs independently reviewed evaluation.</p></div>
+        <div class="closing-right"><div class="note-list"><div><span>STACK</span><strong>Python · FastAPI · PostgreSQL</strong></div><div><span>EXTRACTION</span><strong>HTML · bounded PDF · optional OCR</strong></div><div><span>RESEARCH</span><strong>Article revisions · lineage · claims</strong></div><div><span>OPERATION</span><strong>Local prototype · production validation pending</strong></div></div><a href="https://github.com/himanshu051116/NewsSources/blob/main/README.md" class="button button--dark" target="_blank" rel="noopener noreferrer">Read setup instructions <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer__inside"><a class="brand brand--footer" href="#top"><span class="brand__mark" aria-hidden="true"><span></span><span></span><span></span></span><span>news<span class="brand__last">sources</span><span class="brand__dot">.</span></span></a><span>Follow the record, not just the headline.</span><a href="https://github.com/himanshu051116/NewsSources" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a><small>© <span id="site-year">2026</span> NewsSources · Static showcase</small></div></footer>
+</body>
+</html>
