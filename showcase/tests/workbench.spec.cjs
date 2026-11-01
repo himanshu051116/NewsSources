@@ -265,7 +265,7 @@ test("notes are never transmitted or persisted after reload", async ({ page }) =
   await page.locator("#review-status").selectOption("follow-up");
   await page.locator("#tab-coverage").click();
   await page.locator("#tab-review").click();
-  await expect(page.locator("#review-note")).toContainText("A local draft only");
+  await expect(page.locator("#review-note")).toHaveValue("A local draft only, not a published conclusion.");
   await page.reload();
   await page.locator("#tab-review").click();
   await expect(page.locator("#review-note")).toHaveValue("");
