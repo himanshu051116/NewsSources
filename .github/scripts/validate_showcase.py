@@ -54,18 +54,33 @@ def check() -> None:
         assert panel["aria-labelledby"] in p.ids
     assert "SYNTHETIC WORKBENCH" in html and "Fictional sources" in html
     assert "No live news" in html and "not a live backend connection" in html
+    assert 'Content-Security-Policy' in html
+    assert "connect-src 'none'" in html
+    assert "https://himanshu051116.github.io/NewsSources/" in html
+    assert 'data-filter="derived"' in html, "Derived reports must have an explicit filter"
+    assert len(re.findall(r'data-jump="SRC-\d{3}"', html)) == 3
+    assert len(re.findall(r'data-select-record="SRC-\d{3}"', html)) == 4
+    assert 'id="reset-workbench"' in html
+    assert 'id="comparison-panel"' in html
+    assert 'id="limits"' in html
     assert "COPYRIGHT" not in html.upper(), "Don't invent project licensing"
     for tag, link in p.links:
         if link.startswith("#"):
             assert link[1:] in p.ids, f"Broken on-page link {link}"
         elif link.startswith(("http://", "https://")):
-            assert link.startswith("https://github.com/himanshu051116/NewsSources"), (
-                f"Unexpected outbound URL: {link}"
-            )
+            assert (
+                link.startswith("https://github.com/himanshu051116/NewsSources")
+                or link == "https://himanshu051116.github.io/NewsSources/"
+            ), f"Unexpected outbound URL: {link}"
         else:
             assert (SITE / link).is_file(), f"Missing local asset {tag}: {link}"
     assert re.search(r"const RECORDS = Object\.freeze\(\[", js)
     assert js.count('id: "SRC-') == 4, "Demo should contain four fictional records"
+    assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
+    for feature in ("data-select-record", "data-jump", "timeline-select", "selectRecord",
+                    "reset-workbench", "renderMarkedExcerpt"):
+        assert feature in js, f"Missing interactive case behavior: {feature}"
+    assert "innerHTML" not in js, "Do not inject user-controlled HTML"
     assert 'document.createElement' in js and '.textContent' in js, "Use safe DOM updates"
     assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|localStorage)\s*\(", js), (
         "The static demo must not access live services or persist user input"
@@ -73,7 +88,7 @@ def check() -> None:
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: local assets, navigation targets, tabs, demo labeling, basic privacy and responsiveness")
+    print("PASS: local assets, navigation, tabs, lineage/timeline controls, source comparison, privacy and responsive design")
 
 
 if __name__ == "__main__":

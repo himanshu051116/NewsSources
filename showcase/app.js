@@ -99,7 +99,6 @@ function renderRecordList() {
       state.selected = r.id;
       hideComparison();
       renderRecordList();
-      renderDetail();
     });
     list.append(button);
   }
@@ -127,22 +126,74 @@ function renderDetail() {
   compare.disabled = !r;
   compare.setAttribute("aria-expanded", String(!$("#comparison-panel").hidden));
   if (r && !$("#comparison-panel").hidden) renderComparison();
+  $("[data-select-record]").forEach((button) => {
+    const selected = !!r && button.dataset.selectRecord === r.id;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+}
+// Highlight only the known fictional allocation change. Never interpolate article text as HTML.
+function renderMarkedExcerpt(id, passage, needle) {
+  const element = document.getElementById(id);
+  element.replaceChildren();
+  if (!needle || !passage.includes(needle)) {
+    element.textContent = passage;
+    return;
+  }
+  const position = passage.indexOf(needle);
+  const highlight = makeElement("mark", "changed-figure", needle);
+  element.append(
+    document.createTextNode(passage.slice(0, position)),
+    highlight,
+    document.createTextNode(passage.slice(position + needle.length))
+  );
 }
 function renderComparison() {
   const first = RECORDS[0];
   const selected = RECORDS.find((r) => r.id === state.selected);
   if (!selected) return;
-  put("compare-original", first.excerpt);
-  put("compare-selected", selected.excerpt);
-  put("compare-note", selected.kind === "revision"
-    ? "The revised allocation is 215 rather than 240 units; these figures are fictional."
+  const revised = selected.kind === "revision";
+  renderMarkedExcerpt("compare-original", first.excerpt, revised ? "240" : null);
+  renderMarkedExcerpt("compare-selected", selected.excerpt, revised ? "215" : null);
+  put("compare-note", revised
+    ? "Recorded change: 240 → 215 units. Both amounts are fictional; the highlight indicates a version difference, not verification."
     : selected.id === first.id
-      ? "This is the original notice. Select a follow-up or revision to compare different wording."
-      : "The language changes, but the quoted figures trace back to the same original notice.");
+      ? "This is the original notice. Select a derived report or revision to compare wording."
+      : "Wording changes, but the figures still trace to the same original notice.");
 }
 function hideComparison() {
   $("#comparison-panel").hidden = true;
   $("#compare-button").setAttribute("aria-expanded", "false");
+}
+// Expose a consistent path from the guided tour, lineage diagram and timeline.
+function selectRecord(id, {compare = false, focus = false} = {}) {
+  const selected = RECORDS.find((r) => r.id === id);
+  if (!selected) return;
+  // Reset filters when a tour link points to an otherwise hidden record.
+  if (!filteredRecords().some((r) => r.id === id)) {
+    state.filter = "all";
+    state.search = "";
+    search.value = "";
+    $("[data-filter]").forEach((button) => {
+      const active = button.dataset.filter === "all";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+  state.selected = id;
+  hideComparison();
+  setView("analysis");
+  renderRecordList();
+  if (compare) {
+    $("#comparison-panel").hidden = false;
+    $("#compare-button").setAttribute("aria-expanded", "true");
+    renderComparison();
+  }
+  if (focus) {
+    const target = compare ? $("#comparison-panel") : $("#panel-analysis");
+    target.focus({preventScroll:true});
+    target.scrollIntoView({behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"nearest"});
+  }
 }
 function setView(view, focusTab = false) {
   if (!["analysis", "lineage", "timeline"].includes(view)) return;
@@ -164,7 +215,11 @@ function renderTimeline() {
     const li = makeElement("li");
     const time = makeElement("time", "", item.date);
     time.dateTime = item.dateISO;
-    li.append(time, makeElement("strong", "", item.short), makeElement("p", "", item.timeline));
+    const button = makeElement("button", "timeline-select", item.short + " ↗");
+    button.type = "button";
+    button.setAttribute("aria-label", "Inspect " + item.source + " record from " + item.date);
+    button.addEventListener("click", () => selectRecord(item.id, {compare: item.kind === "revision", focus:true}));
+    li.append(time, button, makeElement("p", "", item.timeline));
     node.append(li);
   }
 }
@@ -213,7 +268,34 @@ $("#compare-button").addEventListener("click", () => {
   $("#compare-button").setAttribute("aria-expanded", String(!panel.hidden));
   if (!panel.hidden) renderComparison();
 });
-$("#close-compare").addEventListener("click", hideComparison);
+$("#close-compare").addEventListener("click", () => {
+  hideComparison();
+  $("#compare-button").focus();
+});
+$("[data-select-record]").forEach((button) => {
+  button.addEventListener("click", () => selectRecord(button.dataset.selectRecord, {
+    compare: button.dataset.compare === "true", focus:true
+  }));
+});
+$("[data-jump]").forEach((button) => {
+  button.addEventListener("click", () => selectRecord(button.dataset.jump, {
+    compare: button.dataset.compare === "true", focus:true
+  }));
+});
+$("#reset-workbench").addEventListener("click", () => {
+  state.filter = "all";
+  state.search = "";
+  search.value = "";
+  state.selected = RECORDS[0].id;
+  $("[data-filter]").forEach((button) => {
+    const active = button.dataset.filter === "all";
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  hideComparison();
+  setView("analysis");
+  renderRecordList();
+});
 const menu = $("#menu-toggle");
 const nav = $("#primary-nav");
 menu.addEventListener("click", () => {
