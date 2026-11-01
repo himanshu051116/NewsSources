@@ -48,10 +48,35 @@ const RECORDS = Object.freeze([
   }
 ]);
 
+// Synthetic claims illustrate source changes; they are not factual verdicts.
+const CLAIMS = Object.freeze([
+  {
+    id: "CLM-01", title: "Proposed corridor length", before: "18 kilometres",
+    after: "18 kilometres", status: "UNCHANGED IN SOURCE", tone: "steady",
+    summary: "Both versions of the fictional notice describe an 18-kilometre draft. Reports repeating that source are not additional confirmation.",
+    question: "Can the proposed route be checked against an independent planning document?",
+    related: "SRC-004", relatedLabel: "Inspect revised notice ↗"
+  },
+  {
+    id: "CLM-02", title: "Preliminary allocation", before: "240 units",
+    after: "215 units", status: "REVISED · SUPERSEDED", tone: "revised",
+    summary: "The issuing office replaces its initial 240-unit draft figure with 215. The old capture is retained to explain coverage of the earlier amount.",
+    question: "When was the revision posted, and which downstream reports still cite 240?",
+    related: "SRC-004", relatedLabel: "Compare revision ↗"
+  },
+  {
+    id: "CLM-03", title: "Independent corroboration", before: "1 originating notice",
+    after: "2 derived reports", status: "SHARED SOURCE ORIGIN", tone: "shared",
+    summary: "The Metro Desk and Regional Wire reports refer back to one invented primary notice. Their repetition does not supply independent evidence for its numbers.",
+    question: "Which independent document or firsthand reporting could verify the assertion?",
+    related: "SRC-003", relatedLabel: "Inspect derived report ↗"
+  }
+]);
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis"};
+const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id};
 const list = $("#record-list");
 const count = $("#record-count");
 const search = $("#record-search");
@@ -175,7 +200,7 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
     state.filter = "all";
     state.search = "";
     search.value = "";
-    $("[data-filter]").forEach((button) => {
+    $$("[data-filter]").forEach((button) => {
       const active = button.dataset.filter === "all";
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
@@ -197,9 +222,9 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
   }
 }
 function setView(view, focusTab = false) {
-  if (!["analysis", "lineage", "timeline"].includes(view)) return;
+  if (!["analysis", "lineage", "timeline", "audit"].includes(view)) return;
   state.view = view;
-  for (const v of ["analysis", "lineage", "timeline"]) {
+  for (const v of ["analysis", "lineage", "timeline", "audit"]) {
     const selected = v === view;
     const tab = document.getElementById("tab-" + v);
     document.getElementById("panel-" + v).hidden = !selected;
@@ -209,6 +234,23 @@ function setView(view, focusTab = false) {
   }
   if (focusTab) document.getElementById("tab-" + view).focus();
 }
+function renderClaim() {
+  const claim = CLAIMS.find((item) => item.id === state.claim) || CLAIMS[0];
+  $("[data-claim]").forEach((button) => {
+    const active = button.dataset.claim === claim.id;
+    button.classList.toggle("is-current", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  put("audit-title", claim.title);
+  put("audit-before", claim.before);
+  put("audit-after", claim.after);
+  put("audit-status", claim.status);
+  put("audit-summary", claim.summary);
+  put("audit-review", claim.question);
+  put("audit-related", claim.relatedLabel);
+  $("#audit-status").className = "audit-state audit-state--" + claim.tone;
+}
+
 function renderTimeline() {
   const node = $("#demo-timeline");
   node.replaceChildren();
@@ -224,6 +266,19 @@ function renderTimeline() {
     node.append(li);
   }
 }
+
+// Claim selection only changes local labels and actions; no network or browser state.
+$("[data-claim]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.claim = button.dataset.claim;
+    renderClaim();
+  });
+});
+$("#audit-original").addEventListener("click", () => selectRecord("SRC-001", {focus:true}));
+$("#audit-related").addEventListener("click", () => {
+  const claim = CLAIMS.find((item) => item.id === state.claim);
+  if (claim) selectRecord(claim.related, {compare: claim.related === "SRC-004" && claim.id === "CLM-02", focus:true});
+});
 
 // Text-only DOM operations avoid interpolating search input into HTML.
 $$("[data-filter]").forEach((button) => {
@@ -251,7 +306,7 @@ search.addEventListener("keydown", (event) => {
 $$("[data-view]").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
   button.addEventListener("keydown", (event) => {
-    const views = ["analysis", "lineage", "timeline"];
+    const views = ["analysis", "lineage", "timeline", "audit"];
     const current = views.indexOf(button.dataset.view);
     let next = current;
     if (event.key === "ArrowRight") next = (current + 1) % views.length;
@@ -288,6 +343,8 @@ $("#reset-workbench").addEventListener("click", () => {
   state.search = "";
   search.value = "";
   state.selected = RECORDS[0].id;
+  state.claim = CLAIMS[0].id;
+  renderClaim();
   $("[data-filter]").forEach((button) => {
     const active = button.dataset.filter === "all";
     button.classList.toggle("is-active", active);
@@ -318,6 +375,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 $("#site-year").textContent = String(new Date().getFullYear());
+renderClaim();
 renderTimeline();
 renderRecordList();
 setView("analysis");
