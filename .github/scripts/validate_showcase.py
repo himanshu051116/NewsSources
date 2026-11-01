@@ -113,19 +113,3 @@ def check() -> None:
 
 if __name__ == "__main__":
     check()
- + '("[data-filter]").forEach'
-    assert js.count(filter_all) == 4, "All four filter operations must use a NodeList collection"
-    assert filter_one not in js.replace(filter_all, ''), "A single-element filter lookup cannot use forEach"
-    assert "innerHTML" not in js, "Do not inject user-controlled HTML"
-    assert 'document.createElement' in js and '.textContent' in js, "Use safe DOM updates"
-    assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|localStorage)\s*\(", js), (
-        "The static demo must not access live services or persist user input"
-    )
-    assert "@media(max-width:520px)" in css
-    assert "prefers-reduced-motion" in css
-    assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: local assets, navigation, tabs, lineage/timeline controls, source comparison, privacy and responsive design")
-
-
-if __name__ == "__main__":
-    check()
