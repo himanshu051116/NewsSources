@@ -76,7 +76,14 @@ const CLAIMS = Object.freeze([
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id, timelineSelected: RECORDS[0].id, coverageLeft: "SRC-001", coverageRight: "SRC-002"};
+const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id, timelineSelected: RECORDS[0].id, coverageLeft: "SRC-001", coverageRight: "SRC-002", reviewClaim: "CLM-01"};
+// This in-memory workspace is intentionally disposable: no cookies, storage or network.
+const reviewEntries = Object.create(null);
+const REVIEW_SOURCE_IDS = Object.freeze({
+  "CLM-01": ["SRC-001", "SRC-004"],
+  "CLM-02": ["SRC-001", "SRC-004"],
+  "CLM-03": ["SRC-002", "SRC-003"]
+});
 const list = $("#record-list");
 const count = $("#record-count");
 const search = $("#record-search");
@@ -221,9 +228,9 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
   }
 }
 function setView(view, focusTab = false) {
-  if (!["analysis", "lineage", "timeline", "audit", "coverage"].includes(view)) return;
+  if (!["analysis", "lineage", "timeline", "audit", "coverage", "review"].includes(view)) return;
   state.view = view;
-  for (const v of ["analysis", "lineage", "timeline", "audit", "coverage"]) {
+  for (const v of ["analysis", "lineage", "timeline", "audit", "coverage", "review"]) {
     const selected = v === view;
     const tab = document.getElementById("tab-" + v);
     document.getElementById("panel-" + v).hidden = !selected;
@@ -407,6 +414,90 @@ $("#coverage-open-right").addEventListener("click", () => {
   if (record) selectRecord(record.id, {compare: record.kind === "revision", focus:true});
 });
 
+function activeReviewEntry() {
+  const id = state.reviewClaim;
+  if (!CLAIMS.some((claim) => claim.id === id)) return {status:"unreviewed",note:""};
+  if (!reviewEntries[id]) reviewEntries[id] = {status:"unreviewed", note:""};
+  return reviewEntries[id];
+}
+
+function updateReviewCounts() {
+  const values = Object.values(reviewEntries);
+  put("review-notes-count", String(values.filter((entry) => entry.note.trim().length > 0).length));
+  put("review-followups-count", String(values.filter((entry) => entry.status === "follow-up").length));
+}
+
+function renderReview() {
+  const claim = CLAIMS.find((item) => item.id === state.reviewClaim) || CLAIMS[0];
+  const entry = activeReviewEntry();
+  $$("[data-review-claim]").forEach((button) => {
+    const chosen = button.dataset.reviewClaim === claim.id;
+    button.classList.toggle("is-current", chosen);
+    button.setAttribute("aria-pressed", String(chosen));
+  });
+  put("review-claim-id", claim.id);
+  put("review-claim-title", claim.title);
+  put("review-claim-summary", claim.summary);
+  put("review-claim-question", claim.question);
+  $("#review-status").value = entry.status;
+  $("#review-note").value = entry.note;
+  put("review-note-count", String(entry.note.length) + " / 600");
+  const sourceIds = REVIEW_SOURCE_IDS[claim.id];
+  put("review-open-primary", "Open " + sourceIds[0] + " ↗");
+  put("review-open-related", "Open " + sourceIds[1] + " ↗");
+  put("review-source-context", claim.id === "CLM-03"
+    ? "Both reports inherit the original SRC-001 notice; distinct headlines do not establish independent corroboration."
+    : "The issuing office released both versions of the fictional primary notice. This is recorded lineage, not proof of the proposal.");
+  updateReviewCounts();
+}
+
+function openReviewSource(position) {
+  const sources = REVIEW_SOURCE_IDS[state.reviewClaim];
+  if (!sources) return;
+  const id = sources[position];
+  selectRecord(id, {compare:id === "SRC-004", focus:true});
+}
+
+$$("[data-review-claim]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!CLAIMS.some((claim) => claim.id === button.dataset.reviewClaim)) return;
+    state.reviewClaim = button.dataset.reviewClaim;
+    renderReview();
+  });
+});
+$("#review-status").addEventListener("change", (event) => {
+  const allowed = ["unreviewed", "follow-up", "editorial-review"];
+  if (!allowed.includes(event.target.value)) return;
+  activeReviewEntry().status = event.target.value;
+  updateReviewCounts();
+});
+$("#review-note").addEventListener("input", (event) => {
+  activeReviewEntry().note = event.target.value.slice(0, 600);
+  put("review-note-count", String(activeReviewEntry().note.length) + " / 600");
+  updateReviewCounts();
+});
+$("#review-clear-note").addEventListener("click", () => {
+  activeReviewEntry().note = "";
+  $("#review-note").value = "";
+  put("review-note-count", "0 / 600");
+  updateReviewCounts();
+  $("#review-note").focus();
+});
+$("#review-open-primary").addEventListener("click", () => openReviewSource(0));
+$("#review-open-related").addEventListener("click", () => openReviewSource(1));
+$("#review-open-lineage").addEventListener("click", () => {
+  state.lineageSelected = "SRC-001";
+  renderLineageInspector();
+  setView("lineage");
+  $("#tab-lineage").focus();
+});
+$("#audit-open-review").addEventListener("click", () => {
+  state.reviewClaim = state.claim;
+  renderReview();
+  setView("review");
+  $("#tab-review").focus();
+});
+
 // Claim selection only changes local labels and actions; no network or browser state.
 $$("[data-claim]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -446,7 +537,7 @@ search.addEventListener("keydown", (event) => {
 $$("[data-view]").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
   button.addEventListener("keydown", (event) => {
-    const views = ["analysis", "lineage", "timeline", "audit", "coverage"];
+    const views = ["analysis", "lineage", "timeline", "audit", "coverage", "review"];
     const current = views.indexOf(button.dataset.view);
     let next = current;
     if (event.key === "ArrowRight") next = (current + 1) % views.length;
@@ -493,6 +584,9 @@ $("#reset-workbench").addEventListener("click", () => {
   state.timelineSelected = RECORDS[0].id;
   state.coverageLeft = "SRC-001";
   state.coverageRight = "SRC-002";
+  state.reviewClaim = "CLM-01";
+  for (const id of Object.keys(reviewEntries)) delete reviewEntries[id];
+  renderReview();
   renderCoverage();
   renderClaim();
   renderLineageInspector();
@@ -527,6 +621,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 $("#site-year").textContent = String(new Date().getFullYear());
+renderReview();
 renderCoverage();
 renderClaim();
 renderLineageInspector();
