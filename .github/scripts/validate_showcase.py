@@ -61,6 +61,12 @@ def check() -> None:
     assert len(re.findall(r'data-jump="SRC-\d{3}"', html)) == 3
     assert len(re.findall(r'data-lineage-record="SRC-\d{3}"', html)) == 4
     assert 'id="lineage-open-record"' in html
+    assert 'id="demo-timeline"' in html
+    assert all(name in p.ids for name in ("timeline-detail-kind", "timeline-detail-index",
+        "timeline-detail-title", "timeline-detail-date", "timeline-detail-note",
+        "timeline-detail-lineage", "timeline-prev", "timeline-next", "timeline-open"))
+    assert 'id="timeline-prev" aria-label="Previous timeline record" disabled' in html
+    assert 'v 0.5' in html, "Version marker must match the current exhibit"
     assert all(name in p.ids for name in ("lineage-detail-kind", "lineage-detail-id",
                                          "lineage-detail-title", "lineage-detail-note"))
     assert 'id="reset-workbench"' in html
@@ -89,8 +95,9 @@ def check() -> None:
         assert feature in js, f"Missing claim audit behavior: {feature}"
     assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
     for feature in ("data-lineage-record", "renderLineageInspector", "lineage-open-record",
-                    "data-jump", "timeline-select", "selectRecord", "reset-workbench",
-                    "renderMarkedExcerpt"):
+                    "data-jump", "timeline-select", "renderTimelineInspector",
+                    "chooseTimelineRecord", "timeline-prev", "timeline-next", "timeline-open",
+                    "selectRecord", "reset-workbench", "renderMarkedExcerpt"):
         assert feature in js, f"Missing interactive case behavior: {feature}"
     lineage_all = '$$' + '("[data-lineage-record]").forEach'
     assert js.count(lineage_all) == 2, "Inspector and node listeners must use collection selectors"
@@ -110,8 +117,10 @@ def check() -> None:
     )
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
+    for selector in (".chronology__inspector", ".chronology__event", ".chronology__actions"):
+        assert selector in css, f"Missing timeline styling: {selector}"
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: assets, four tabs, interactive lineage, claim audit, comparisons, privacy, selectors, responsive CSS")
+    print("PASS: assets, four tabs, lineage, timeline inspector, claim audit, privacy, selectors and responsive CSS")
 
 
 if __name__ == "__main__":
