@@ -76,8 +76,8 @@ test("lineage nodes preview relationships and open the selected source", async (
 test("keyboard tab navigation supports arrows, Home and End", async ({ page }) => {
   await page.locator("#tab-analysis").focus();
   await page.keyboard.press("End");
-  await expect(page.locator("#tab-coverage")).toBeFocused();
-  await expect(page.locator("#tab-coverage")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#tab-review")).toBeFocused();
+  await expect(page.locator("#tab-review")).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Home");
   await expect(page.locator("#tab-analysis")).toBeFocused();
   await page.keyboard.press("ArrowRight");
@@ -204,4 +204,88 @@ test("coverage explains duplicate selection and keeps mobile controls usable", a
   await expect(page.locator("#coverage-open-right")).toBeVisible();
   await page.locator("#coverage-open-left").click();
   await expect(page.locator("#detail-id")).toHaveText("SRC-003");
+});
+
+test("review desk keeps independent session notes per claim and tracks follow-ups", async ({ page }) => {
+  await page.locator("#tab-review").click();
+  await expect(page.locator("#panel-review")).toBeVisible();
+  await expect(page.locator("#review-claim-id")).toHaveText("CLM-01");
+  await expect(page.locator("#review-notes-count")).toHaveText("0");
+  await expect(page.locator("#review-followups-count")).toHaveText("0");
+  await page.locator("#review-note").fill("Check the route with independent plans.");
+  await page.locator("#review-status").selectOption("follow-up");
+  await expect(page.locator("#review-notes-count")).toHaveText("1");
+  await expect(page.locator("#review-followups-count")).toHaveText("1");
+  await page.locator('[data-review-claim="CLM-02"]').click();
+  await expect(page.locator("#review-note")).toHaveValue("");
+  await page.locator("#review-note").fill("Find the original publication timestamp.");
+  await page.locator("#review-status").selectOption("editorial-review");
+  await expect(page.locator("#review-notes-count")).toHaveText("2");
+  await expect(page.locator("#review-followups-count")).toHaveText("1");
+  await page.locator('[data-review-claim="CLM-01"]').click();
+  await expect(page.locator("#review-note")).toHaveValue("Check the route with independent plans.");
+  await expect(page.locator("#review-status")).toHaveValue("follow-up");
+  await page.locator("#review-clear-note").click();
+  await expect(page.locator("#review-notes-count")).toHaveText("1");
+  await expect(page.locator("#review-followups-count")).toHaveText("1");
+  await page.locator("#reset-workbench").click();
+  await page.locator("#tab-review").click();
+  await expect(page.locator("#review-notes-count")).toHaveText("0");
+  await expect(page.locator("#review-followups-count")).toHaveText("0");
+  await expect(page.locator("#review-status")).toHaveValue("unreviewed");
+  await expect(page.locator("#review-note")).toHaveValue("");
+});
+
+test("audit handoff opens reviewer desk and traces the revised claim to its source", async ({ page }) => {
+  await page.locator("#tab-audit").click();
+  await page.locator('[data-claim="CLM-02"]').click();
+  await page.locator("#audit-open-review").click();
+  await expect(page.locator("#tab-review")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#review-claim-id")).toHaveText("CLM-02");
+  await expect(page.locator("#review-claim-summary")).toContainText("215");
+  await expect(page.locator("#review-open-primary")).toContainText("SRC-001");
+  await expect(page.locator("#review-open-related")).toContainText("SRC-004");
+  await page.locator("#review-open-related").click();
+  await expect(page.locator("#tab-analysis")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#detail-id")).toHaveText("SRC-004");
+  await expect(page.locator("#compare-selected mark")).toHaveText("215");
+  await page.locator("#tab-review").click();
+  await page.locator("#review-open-lineage").click();
+  await expect(page.locator("#tab-lineage")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#lineage-detail-id")).toHaveText("SRC-001");
+});
+
+test("notes are never transmitted or persisted after reload", async ({ page }) => {
+  const external = [];
+  page.on("request", (request) => {
+    if (!request.url().startsWith("http://127.0.0.1:8088/")) external.push(request.url());
+  });
+  await page.locator("#tab-review").click();
+  await page.locator("#review-note").fill("A local draft only, not a published conclusion.");
+  await page.locator("#review-status").selectOption("follow-up");
+  await page.locator("#tab-coverage").click();
+  await page.locator("#tab-review").click();
+  await expect(page.locator("#review-note")).toHaveValue("A local draft only, not a published conclusion.");
+  await page.reload();
+  await page.locator("#tab-review").click();
+  await expect(page.locator("#review-note")).toHaveValue("");
+  await expect(page.locator("#review-status")).toHaveValue("unreviewed");
+  await expect(page.locator("#review-followups-count")).toHaveText("0");
+  expect(external).toEqual([]);
+});
+
+test("mobile reviewer queue remains keyboard usable and bounds typed notes", async ({ page }) => {
+  await page.setViewportSize({width:375,height:812});
+  await page.locator("#tab-review").click();
+  await page.locator('[data-review-claim="CLM-03"]').focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#review-claim-id")).toHaveText("CLM-03");
+  await expect(page.locator("#review-source-context")).toContainText("SRC-001");
+  await expect(page.locator("#review-open-primary")).toContainText("SRC-002");
+  await expect(page.locator("#review-open-related")).toContainText("SRC-003");
+  await page.locator("#review-note").fill("x".repeat(650));
+  await expect(page.locator("#review-note-count")).toHaveText("600 / 600");
+  await expect(page.locator("#review-note")).toHaveValue("x".repeat(600));
+  await page.locator("#review-open-primary").click();
+  await expect(page.locator("#detail-id")).toHaveText("SRC-002");
 });
