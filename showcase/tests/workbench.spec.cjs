@@ -108,3 +108,42 @@ test("does not request a remote publisher or service", async ({ page }) => {
   await expect(page.locator("#record-count")).toHaveText("4 records");
   expect(remoteRequests).toEqual([]);
 });
+
+test("timeline previews captures before an explicit evidence drilldown", async ({ page }) => {
+  await page.locator("#tab-timeline").click();
+  await expect(page.locator("#panel-timeline")).toBeVisible();
+  await expect(page.locator("[data-timeline-record]")).toHaveCount(4);
+  await expect(page.locator("#timeline-detail-index")).toHaveText("01 / 04");
+  await expect(page.locator("#timeline-prev")).toBeDisabled();
+  await page.locator("#timeline-next").click();
+  await expect(page.locator("#timeline-detail-index")).toHaveText("02 / 04");
+  await expect(page.locator("#timeline-detail-source")).toHaveText("Metro Desk");
+  await expect(page.locator("#tab-timeline")).toHaveAttribute("aria-selected", "true");
+
+  await page.locator('[data-timeline-record="SRC-004"]').click();
+  await expect(page.locator('[data-timeline-record="SRC-004"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#timeline-detail-index")).toHaveText("04 / 04");
+  await expect(page.locator("#timeline-next")).toBeDisabled();
+  await expect(page.locator("#timeline-open")).toContainText("Compare correction");
+  await page.locator("#timeline-open").click();
+  await expect(page.locator("#tab-analysis")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#detail-id")).toHaveText("SRC-004");
+  await expect(page.locator("#compare-original mark")).toHaveText("240");
+  await expect(page.locator("#compare-selected mark")).toHaveText("215");
+});
+
+test("timeline keyboard selection and reset retain consistent state", async ({ page }) => {
+  await page.locator("#tab-timeline").click();
+  await page.locator('[data-timeline-record="SRC-003"]').focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#timeline-detail-index")).toHaveText("03 / 04");
+  await expect(page.locator("#timeline-detail-lineage")).toHaveText("Derived from SRC-001");
+  await page.locator("#timeline-prev").click();
+  await expect(page.locator("#timeline-detail-index")).toHaveText("02 / 04");
+  await page.locator("#reset-workbench").click();
+  await page.locator("#tab-timeline").click();
+  await expect(page.locator("#timeline-detail-index")).toHaveText("01 / 04");
+  await expect(page.locator('[data-timeline-record="SRC-001"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#timeline-prev")).toBeDisabled();
+});
+
