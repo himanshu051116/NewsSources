@@ -96,8 +96,11 @@ def check() -> None:
     assert js.count(selector_all) == 2, (
         "Both record-selection listeners and selection-state updates must iterate all controls"
     )
-    filter_all = '$' + '("[data-filter]").forEach'
-    filter_one = '
+    filter_all = '$$' + '("[data-filter]").forEach'
+    filter_one = '$' + '("[data-filter]").forEach'
+    assert js.count(filter_all) == 4, "All four filter operations must use collection selectors"
+    assert filter_one not in js.replace(filter_all, ''), "Singular filter selection breaks reset"
+    assert "innerHTML" not in js, "Do not inject user-controlled HTML"
     assert 'document.createElement' in js and '.textContent' in js, "Use safe DOM updates"
     assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|localStorage)\s*\(", js), (
         "The static demo must not access live services or persist user input"
