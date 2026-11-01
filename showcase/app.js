@@ -127,7 +127,7 @@ function renderDetail() {
   compare.disabled = !r;
   compare.setAttribute("aria-expanded", String(!$("#comparison-panel").hidden));
   if (r && !$("#comparison-panel").hidden) renderComparison();
-  $("[data-select-record]").forEach((button) => {
+  $$("[data-select-record]").forEach((button) => {
     const selected = !!r && button.dataset.selectRecord === r.id;
     button.classList.toggle("is-selected", selected);
     button.setAttribute("aria-pressed", String(selected));
@@ -273,7 +273,7 @@ $("#close-compare").addEventListener("click", () => {
   hideComparison();
   $("#compare-button").focus();
 });
-$("[data-select-record]").forEach((button) => {
+$$("[data-select-record]").forEach((button) => {
   button.addEventListener("click", () => selectRecord(button.dataset.selectRecord, {
     compare: button.dataset.compare === "true", focus:true
   }));
