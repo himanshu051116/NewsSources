@@ -46,7 +46,7 @@ def check() -> None:
     p = SiteParser()
     p.feed(html)
     assert p.heading_count == 1, "Expected exactly one page-level h1"
-    assert len(p.tabs) == len(p.panels) == 5, "Five workbench tabs required"
+    assert len(p.tabs) == len(p.panels) == 6, "Six workbench tabs required"
     assert "main" in p.ids and "record-list" in p.ids
     for tab in p.tabs:
         assert tab["aria-controls"] in p.ids
@@ -66,13 +66,21 @@ def check() -> None:
         "timeline-detail-title", "timeline-detail-date", "timeline-detail-note",
         "timeline-detail-lineage", "timeline-prev", "timeline-next", "timeline-open"))
     assert 'id="timeline-prev" aria-label="Previous timeline record" disabled' in html
-    assert 'v 0.6' in html, "Version marker must match the current exhibit"
+    assert 'v 0.7' in html, "Version marker must match the current exhibit"
     assert all(name in p.ids for name in ("lineage-detail-kind", "lineage-detail-id",
                                          "lineage-detail-title", "lineage-detail-note"))
     assert 'id="reset-workbench"' in html
     assert 'id="comparison-panel"' in html
     assert 'id="tab-audit"' in html and 'id="panel-audit"' in html
     assert 'id="tab-coverage"' in html and 'id="panel-coverage"' in html
+    assert 'id="tab-review"' in html and 'id="panel-review"' in html
+    assert 'id="audit-open-review"' in html
+    assert len(re.findall(r'data-review-claim="CLM-\d{2}"', html)) == 3
+    assert all(name in p.ids for name in ("review-claim-title", "review-status", "review-note",
+        "review-note-count", "review-clear-note", "review-notes-count", "review-followups-count",
+        "review-open-primary", "review-open-related", "review-open-lineage", "review-note-warning"))
+    assert 'maxlength="600"' in html
+    assert "SESSION ONLY" in html and "NOT INDEPENDENTLY VERIFIED" in html
     assert all(name in p.ids for name in ("coverage-left", "coverage-right", "coverage-swap",
         "coverage-left-excerpt", "coverage-right-excerpt", "coverage-relationship",
         "coverage-interpretation", "coverage-open-left", "coverage-open-right", "coverage-class"))
@@ -99,7 +107,9 @@ def check() -> None:
                     "data-claim", '"audit"', 'CLAIMS.find'):
         assert feature in js, f"Missing claim audit behavior: {feature}"
     assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
-    for feature in ("renderCoverage", "coverage-left", "coverage-right", "coverage-swap",
+    for feature in ("renderReview", "reviewEntries", "REVIEW_SOURCE_IDS",
+                    "activeReviewEntry", "review-clear-note", "audit-open-review",
+                    "renderCoverage", "coverage-left", "coverage-right", "coverage-swap",
                     "coverage-open-left", "coverage-open-right",
                     "data-lineage-record", "renderLineageInspector", "lineage-open-record",
                     "data-jump", "timeline-select", "renderTimelineInspector",
@@ -117,6 +127,11 @@ def check() -> None:
     filter_one = '$' + '("[data-filter]").forEach'
     assert js.count(filter_all) == 4, "All four filter operations must use collection selectors"
     assert filter_one not in js.replace(filter_all, ''), "Singular filter selection breaks reset"
+    review_all = '$$' + '("[data-review-claim]").forEach'
+    assert js.count(review_all) == 2, "Review queue and selection must iterate collections"
+    assert not any(term in js for term in ("sessionStorage", "indexedDB", "document.cookie")), (
+        "Reviewer draft state must stay in memory and disappear on reload"
+    )
     assert "innerHTML" not in js, "Do not inject user-controlled HTML"
     assert 'document.createElement' in js and '.textContent' in js, "Use safe DOM updates"
     assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|localStorage)\s*\(", js), (
@@ -124,12 +139,15 @@ def check() -> None:
     )
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
+    for selector in (".review-grid", ".review-queue__claim", ".review-detail",
+                     ".review-session-flag", ".review-privacy"):
+        assert selector in css, f"Missing reviewer workspace styling: {selector}"
     for selector in (".coverage-controls", ".coverage-columns", ".coverage-finding", ".coverage-document"):
         assert selector in css, f"Missing coverage comparison styling: {selector}"
     for selector in (".chronology__inspector", ".chronology__event", ".chronology__actions"):
         assert selector in css, f"Missing timeline styling: {selector}"
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: assets, five tabs, lineage, timeline, claim audit, coverage comparison, privacy and responsive CSS")
+    print("PASS: assets, six tabs, evidence navigation, temporary review notes, privacy, selectors and responsive CSS")
 
 
 if __name__ == "__main__":
