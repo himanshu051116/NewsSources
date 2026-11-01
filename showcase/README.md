@@ -30,6 +30,21 @@ node --check showcase/app.js
 
 The site remains useful without JavaScript, but its fictional workbench needs JavaScript for interaction.
 
+### Browser regression tests
+
+Playwright tests run against a local Python static server. From the repository root (Node.js 22+ and Python 3 required):
+
+~~~sh
+cd showcase/tests
+npm install
+npx playwright install chromium
+npm test
+~~~
+
+The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, passage drilldowns, revision highlighting, keyboard tabs, navigation and the absence of remote requests.
+
+The GitHub Pages workflow runs the same test suite on pull requests and main; deployment to Pages now depends on successful validation **and** browser smoke tests. The tests are development dependencies only and are not included in the published `showcase/` artifact because the Pages upload step must exclude the `tests/` directory.
+
 ## Pages deployment — active on main
 
 The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
@@ -39,19 +54,22 @@ The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
 3. Confirm the deployment in [GitHub Actions](https://github.com/himanshu051116/NewsSources/actions/workflows/pages-showcase.yml).
 4. Changes to a feature branch never overwrite the live website before review.
 
-The workflow publishes only the `showcase/` directory; there is no backend, crawler, database, live publisher feed or secret in the Pages artifact.
+The workflow prepares a static deployment of the site. The site does not call the backend, crawlers, databases, live publisher feeds or private services. Browser-test sources live under `showcase/tests/` and are not website features.
 
-### Exhibit v0.3
+### Exhibit v0.4
 - Four **invented** records (one original notice, two derived reports, one revision)
 - A case briefing strip with visible original/derived/revision indicators
 - A fourth workbench tab: claim audit, with three labeled synthetic claims, editorial follow-up questions and source jumps
 - A guided three-step case tour and dedicated derived-report filter
-- Selectable source-lineage nodes and clickable timeline entries
+- A structured lineage explorer with four selectable source nodes and an evidence inspector
+- Explicit links from one notice to two derived reports and a later same-issuer revision
+- Dedicated source-inspector action to open the selected passage (or compare the revision)
+- Clickable timeline entries
 - Safe side-by-side comparison with the fictional 240 → 215 revision highlighted
 - A visible explanation of what source provenance can and cannot prove
 - Keyboard-operated tabs, responsive layouts, local assets and a restrictive site CSP
 
-Browser QA should cover keyboard navigation, mobile widths, filtering, source selection, claim selection, source-tracing actions, the revision comparison and the reset control. The offline validator checks the new tab and claim controls in addition to link safety and non-network behavior; it does **not** replace a browser interaction test.
+Browser QA runs in CI on desktop and mobile Chromium. The offline validator checks the structural invariants, including multi-element selectors; only the browser suite exercises real DOM events. Inspect failing traces rather than approving a pull request on syntax checks alone.
 
 Suggested smoke test:
 1. Choose **Claim audit** and switch through all three claim cards; the evidence values and editorial question must update.
@@ -65,7 +83,8 @@ Suggested smoke test:
 
 - index.html: editorial copy and semantic layout
 - styles.css: responsive visual system and reduced-motion styles
-- app.js: fully local fictional records, guided tour and interactions
+- app.js: fully local fictional records, claim audit, source inspector and guided interactions
+- tests/: browser regression suite and Playwright configuration (not part of the public-facing UI)
 - favicon.svg: local vector brand mark
 - .github/scripts/validate_showcase.py: basic link, privacy and structure checks
 
