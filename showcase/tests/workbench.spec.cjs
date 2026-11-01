@@ -76,8 +76,8 @@ test("lineage nodes preview relationships and open the selected source", async (
 test("keyboard tab navigation supports arrows, Home and End", async ({ page }) => {
   await page.locator("#tab-analysis").focus();
   await page.keyboard.press("End");
-  await expect(page.locator("#tab-audit")).toBeFocused();
-  await expect(page.locator("#tab-audit")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#tab-coverage")).toBeFocused();
+  await expect(page.locator("#tab-coverage")).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Home");
   await expect(page.locator("#tab-analysis")).toBeFocused();
   await page.keyboard.press("ArrowRight");
@@ -147,3 +147,61 @@ test("timeline keyboard selection and reset retain consistent state", async ({ p
   await expect(page.locator("#timeline-prev")).toBeDisabled();
 });
 
+
+test("coverage compares inherited reporting and swapping captures", async ({ page }) => {
+  await page.locator("#tab-coverage").click();
+  await expect(page.locator("#panel-coverage")).toBeVisible();
+  await expect(page.locator("#coverage-left-id")).toHaveText("SRC-001");
+  await expect(page.locator("#coverage-right-id")).toHaveText("SRC-002");
+  await expect(page.locator("#coverage-class")).toHaveText("SHARED ORIGIN");
+
+  await page.locator("#coverage-left").selectOption("SRC-002");
+  await page.locator("#coverage-right").selectOption("SRC-003");
+  await expect(page.locator("#coverage-relationship")).toHaveText("Two reports; one originating document");
+  await expect(page.locator("#coverage-left-lineage")).toHaveText("Derived from SRC-001");
+  await expect(page.locator("#coverage-right-lineage")).toHaveText("Derived from SRC-001");
+  await expect(page.locator("#coverage-left-excerpt")).toContainText("240");
+  await expect(page.locator("#coverage-right-excerpt")).toContainText("240");
+
+  await page.locator("#coverage-swap").click();
+  await expect(page.locator("#coverage-left").locator("option:checked")).toHaveAttribute("value", "SRC-003");
+  await expect(page.locator("#coverage-right").locator("option:checked")).toHaveAttribute("value", "SRC-002");
+  await expect(page.locator("#coverage-relationship")).toHaveText("Two reports; one originating document");
+});
+
+test("coverage highlights a revision and opens its supporting passage", async ({ page }) => {
+  await page.locator("#tab-coverage").click();
+  await page.locator("#coverage-right").selectOption("SRC-004");
+  await expect(page.locator("#coverage-class")).toHaveText("REVISION");
+  await expect(page.locator("#coverage-left-excerpt mark")).toHaveText("240");
+  await expect(page.locator("#coverage-right-excerpt mark")).toHaveText("215");
+  await expect(page.locator("#coverage-interpretation")).toContainText("same originating");
+  await page.locator("#coverage-open-right").click();
+  await expect(page.locator("#tab-analysis")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#detail-id")).toHaveText("SRC-004");
+  await expect(page.locator("#compare-original mark")).toHaveText("240");
+  await expect(page.locator("#compare-selected mark")).toHaveText("215");
+
+  await page.locator("#tab-coverage").click();
+  await expect(page.locator("#coverage-right")).toHaveValue("SRC-004");
+  await page.locator("#reset-workbench").click();
+  await page.locator("#tab-coverage").click();
+  await expect(page.locator("#coverage-left")).toHaveValue("SRC-001");
+  await expect(page.locator("#coverage-right")).toHaveValue("SRC-002");
+  await expect(page.locator("#coverage-class")).toHaveText("SHARED ORIGIN");
+});
+
+test("coverage explains duplicate selection and keeps mobile controls usable", async ({ page }) => {
+  await page.setViewportSize({width:375,height:812});
+  await page.locator("#tab-coverage").click();
+  await page.locator("#coverage-left").selectOption("SRC-003");
+  await page.locator("#coverage-right").selectOption("SRC-003");
+  await expect(page.locator("#coverage-class")).toHaveText("SAME RECORD");
+  await expect(page.locator("#coverage-relationship")).toHaveText("Same capture selected twice");
+  await expect(page.locator("#coverage-left-excerpt mark")).toHaveCount(0);
+  await expect(page.locator("#coverage-right-excerpt mark")).toHaveCount(0);
+  await expect(page.locator("#coverage-open-left")).toBeVisible();
+  await expect(page.locator("#coverage-open-right")).toBeVisible();
+  await page.locator("#coverage-open-left").click();
+  await expect(page.locator("#detail-id")).toHaveText("SRC-003");
+});
