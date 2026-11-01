@@ -124,7 +124,7 @@
         <div class="workbench" aria-label="Interactive fictional news research workbench">
           <div class="workbench__topbar">
             <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
-            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.6</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.7</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
           </div>
           <div class="case-briefing" aria-label="Fictional case briefing">
             <div class="case-briefing__main">
@@ -157,7 +157,8 @@
                 <button type="button" class="bench-tab" id="tab-lineage" role="tab" aria-controls="panel-lineage" aria-selected="false" tabindex="-1" data-view="lineage">Source lineage</button>
                 <button type="button" class="bench-tab" id="tab-timeline" role="tab" aria-controls="panel-timeline" aria-selected="false" tabindex="-1" data-view="timeline">Timeline</button>
                 <button type="button" class="bench-tab" id="tab-audit" role="tab" aria-controls="panel-audit" aria-selected="false" tabindex="-1" data-view="audit">Claim audit</button>
-                <button type="button" class="bench-tab" id="tab-coverage" role="tab" aria-controls="panel-coverage" aria-selected="false" tabindex="-1" data-view="coverage">Compare coverage <span class="bench-tab__new">NEW</span></button>
+                <button type="button" class="bench-tab" id="tab-coverage" role="tab" aria-controls="panel-coverage" aria-selected="false" tabindex="-1" data-view="coverage">Compare coverage</button>
+                <button type="button" class="bench-tab" id="tab-review" role="tab" aria-controls="panel-review" aria-selected="false" tabindex="-1" data-view="review">Review desk <span class="bench-tab__new">NEW</span></button>
               </div>
               <div id="panel-analysis" class="bench-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-analysis">
                 <div class="analysis__eyebrow"><span id="detail-kind">CORRECTION / REVIEW</span><span id="detail-date">—</span></div>
@@ -228,7 +229,7 @@
                     <div class="audit-values"><div><span>EARLIER CAPTURE</span><strong id="audit-before">18 kilometres</strong></div><div><span>LATER CAPTURE</span><strong id="audit-after">18 kilometres</strong></div></div>
                     <p class="audit-summary" id="audit-summary">Both notices describe an 18-kilometre draft; this alone does not establish the final route.</p>
                     <div class="audit-review"><span>OPEN EDITORIAL QUESTION</span><p id="audit-review">How can the proposed route be independently verified?</p></div>
-                    <div class="audit-actions"><button type="button" id="audit-original">Inspect original notice ↗</button><button type="button" id="audit-related">Inspect related capture ↗</button></div>
+                    <div class="audit-actions"><button type="button" id="audit-original">Inspect original notice ↗</button><button type="button" id="audit-related">Inspect related capture ↗</button><button type="button" id="audit-open-review">Write reviewer note ↗</button></div>
                   </div>
                 </div>
                 <p class="subview__foot">The register illustrates source history and attribution, not real-world truth. A changed number does not prove implementation; repeated headlines are not independent witnesses.</p>
@@ -279,6 +280,45 @@
                   <span class="coverage-finding__chip" id="coverage-class">SHARED ORIGIN</span>
                 </section>
                 <p class="subview__foot">All four records are invented. This comparison shows recorded attribution and revision differences; it does not calculate truthfulness, make live requests, or establish real-world independence.</p>
+              </div>
+              <div id="panel-review" class="bench-panel bench-panel--review" role="tabpanel" tabindex="0" aria-labelledby="tab-review" hidden>
+                <div class="review-heading">
+                  <div><span class="small-label">HUMAN REVIEW / SYNTHETIC CASE 024</span><h3>Questions first. <em>Verdicts never.</em></h3><p>Work through three invented claims, inspect their source records, and capture editorial follow-up notes for this browser session only.</p></div>
+                  <span class="review-session-flag"><span aria-hidden="true">●</span> SESSION ONLY · NOT SAVED</span>
+                </div>
+                <div class="review-summary" aria-label="Working note counts">
+                  <div><strong id="review-notes-count" aria-live="polite">0</strong><span>CLAIMS WITH NOTES</span></div>
+                  <div><strong id="review-followups-count" aria-live="polite">0</strong><span>FOLLOW-UP FLAGS</span></div>
+                  <p><strong>Important:</strong> These are temporary human workflow labels, not automated truth scores or verification results.</p>
+                </div>
+                <div class="review-grid">
+                  <aside class="review-queue" aria-label="Choose a fictional claim for review">
+                    <div class="review-queue__head"><span>CASE QUEUE</span><span>03 CLAIMS</span></div>
+                    <button type="button" class="review-queue__claim is-current" data-review-claim="CLM-01" aria-pressed="true"><span>CLM / 01</span><strong>Corridor distance</strong><small>Unconfirmed proposal</small></button>
+                    <button type="button" class="review-queue__claim" data-review-claim="CLM-02" aria-pressed="false"><span>CLM / 02</span><strong>Allocation correction</strong><small>240 → 215, same issuer</small></button>
+                    <button type="button" class="review-queue__claim" data-review-claim="CLM-03" aria-pressed="false"><span>CLM / 03</span><strong>Independent sources?</strong><small>Two reports · one origin</small></button>
+                    <p class="review-queue__foot">No claim in this fictional demo has been independently verified.</p>
+                  </aside>
+                  <section class="review-detail" aria-label="Selected claim and reviewer workspace">
+                    <div class="review-detail__head"><span id="review-claim-id">CLM-01</span><span class="review-unverified">NOT INDEPENDENTLY VERIFIED</span></div>
+                    <h4 id="review-claim-title">Proposed corridor length</h4>
+                    <p id="review-claim-summary" class="review-detail__summary">An original source reported a proposal; independent confirmation is still needed.</p>
+                    <div class="review-question"><span>OPEN QUESTION</span><p id="review-claim-question">Can the draft corridor be independently confirmed?</p></div>
+                    <div class="review-sources"><span>TRACE THE RECORDED EVIDENCE</span><div class="review-sources__actions">
+                      <button type="button" id="review-open-primary">Open SRC-001 ↗</button>
+                      <button type="button" id="review-open-related">Open SRC-004 ↗</button>
+                      <button type="button" id="review-open-lineage">Explore lineage ↗</button>
+                    </div><small id="review-source-context">Both notice versions come from the same issuing office.</small></div>
+                    <div class="review-edit">
+                      <label for="review-status">EDITORIAL WORKFLOW STATUS <span>not a truth verdict</span></label>
+                      <select id="review-status"><option value="unreviewed">Not assessed</option><option value="follow-up">Follow-up required</option><option value="editorial-review">Needs editorial review</option></select>
+                      <label for="review-note">WORKING NOTE <span>up to 600 characters</span></label>
+                      <textarea id="review-note" maxlength="600" rows="5" placeholder="What evidence is missing? What should be checked next?" aria-describedby="review-note-warning review-note-count"></textarea>
+                      <div class="review-edit__footer"><span id="review-note-count" aria-live="polite">0 / 600</span><button type="button" id="review-clear-note">Clear this note</button></div>
+                    </div>
+                  </section>
+                </div>
+                <p id="review-note-warning" class="review-privacy">Working notes exist only in memory while this page is open. Refreshing, closing, or resetting the demo clears them. They are never sent to a server or saved to local storage. Do not enter sensitive information.</p>
               </div>
             </div>
           </div>
