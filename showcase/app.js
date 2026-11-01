@@ -350,7 +350,7 @@ $("#lineage-open-record").addEventListener("click", () => {
   const selected = state.lineageSelected;
   selectRecord(selected, {compare: selected === "SRC-004", focus:true});
 });
-$("[data-jump]").forEach((button) => {
+$$("[data-jump]").forEach((button) => {
   button.addEventListener("click", () => selectRecord(button.dataset.jump, {
     compare: button.dataset.compare === "true", focus:true
   }));
