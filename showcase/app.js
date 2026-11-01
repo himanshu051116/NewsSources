@@ -236,7 +236,7 @@ function setView(view, focusTab = false) {
 }
 function renderClaim() {
   const claim = CLAIMS.find((item) => item.id === state.claim) || CLAIMS[0];
-  $("[data-claim]").forEach((button) => {
+  $$("[data-claim]").forEach((button) => {
     const active = button.dataset.claim === claim.id;
     button.classList.toggle("is-current", active);
     button.setAttribute("aria-pressed", String(active));
@@ -268,7 +268,7 @@ function renderTimeline() {
 }
 
 // Claim selection only changes local labels and actions; no network or browser state.
-$("[data-claim]").forEach((button) => {
+$$("[data-claim]").forEach((button) => {
   button.addEventListener("click", () => {
     state.claim = button.dataset.claim;
     renderClaim();
