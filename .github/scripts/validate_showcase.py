@@ -80,7 +80,7 @@ def check() -> None:
     for feature in ("data-select-record", "data-jump", "timeline-select", "selectRecord",
                     "reset-workbench", "renderMarkedExcerpt"):
         assert feature in js, f"Missing interactive case behavior: {feature}"
-    assert '$("[data-select-record]").forEach' not in js, (
+    assert not re.search(r'(?<!\\$)\\$\\("\\[data-select-record\\]"\\)\\.forEach', js), (
         "Record selector must return a collection before forEach; querySelector crashes the workbench"
     )
     assert js.count('$("[data-select-record]").forEach') == 2, (
