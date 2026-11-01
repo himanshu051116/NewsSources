@@ -79,6 +79,7 @@ function renderRecordList() {
   count.textContent = records.length + (records.length === 1 ? " record" : " records");
   list.replaceChildren();
   if (!records.length) {
+    hideComparison();
     list.append(makeElement("p", "record-empty", "No matching records. Try another source or clear the filter."));
     state.selected = null;
     renderDetail();
