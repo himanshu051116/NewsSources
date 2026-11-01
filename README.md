@@ -1,5 +1,7 @@
 # NewsSources
 
+**Project website:** [Explore the NewsSources showcase](https://himanshu051116.github.io/NewsSources/) — a static, interactive fictional case study. The live FastAPI backend is not hosted on GitHub Pages.
+
 NewsSources is a local news-research application for collecting articles, retaining their revisions, grouping coverage of the same event, and reviewing claims against stored material. The reader, source-management interface and analyst workflows run on a FastAPI backend.
 
 The project is designed for source tracing and editorial research. An article citation records where a statement came from; it does not establish whether that statement is true or independently confirmed.
