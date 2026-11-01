@@ -76,7 +76,7 @@ const CLAIMS = Object.freeze([
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id};
+const state = {filter: "all", search: "", selected: RECORDS[0].id, view: "analysis", claim: CLAIMS[0].id, lineageSelected: RECORDS[0].id, timelineSelected: RECORDS[0].id};
 const list = $("#record-list");
 const count = $("#record-count");
 const search = $("#record-search");
@@ -203,7 +203,9 @@ function selectRecord(id, {compare = false, focus = false} = {}) {
   }
   state.selected = id;
   state.lineageSelected = id;
+  state.timelineSelected = id;
   renderLineageInspector();
+  renderTimelineInspector();
   hideComparison();
   setView("analysis");
   renderRecordList();
@@ -263,21 +265,74 @@ function renderClaim() {
   $("#audit-status").className = "audit-state audit-state--" + claim.tone;
 }
 
+function renderTimelineInspector() {
+  const index = Math.max(0, RECORDS.findIndex((record) => record.id === state.timelineSelected));
+  const record = RECORDS[index];
+  $$("[data-timeline-record]").forEach((button) => {
+    const active = button.dataset.timelineRecord === record.id;
+    button.classList.toggle("is-current", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  put("timeline-detail-index", String(index + 1).padStart(2, "0") + " / " + String(RECORDS.length).padStart(2, "0"));
+  put("timeline-detail-kind", record.kindLabel);
+  put("timeline-detail-date", record.date);
+  $("#timeline-detail-date").dateTime = record.dateISO;
+  put("timeline-detail-title", record.title);
+  put("timeline-detail-text", record.timeline);
+  put("timeline-detail-source", record.source);
+  put("timeline-detail-lineage", record.lineage);
+  put("timeline-detail-note", record.note);
+  put("timeline-open", record.kind === "revision" ? "Compare correction ↗" : "Inspect passage ↗");
+  $("#timeline-prev").disabled = index === 0;
+  $("#timeline-next").disabled = index === RECORDS.length - 1;
+  $("#timeline-detail-kind").className = "chronology__kind chronology__kind--" + record.kind;
+}
+
+function chooseTimelineRecord(id) {
+  if (!RECORDS.some((record) => record.id === id)) return;
+  state.timelineSelected = id;
+  renderTimelineInspector();
+}
+
+function stepTimeline(direction) {
+  const currentIndex = RECORDS.findIndex((record) => record.id === state.timelineSelected);
+  const targetIndex = currentIndex + direction;
+  if (targetIndex >= 0 && targetIndex < RECORDS.length) {
+    chooseTimelineRecord(RECORDS[targetIndex].id);
+  }
+}
+
 function renderTimeline() {
   const node = $("#demo-timeline");
   node.replaceChildren();
-  for (const item of RECORDS) {
-    const li = makeElement("li");
-    const time = makeElement("time", "", item.date);
-    time.dateTime = item.dateISO;
-    const button = makeElement("button", "timeline-select", item.short + " ↗");
+  for (const record of RECORDS) {
+    const li = makeElement("li", "chronology__item chronology__item--" + record.kind);
+    const button = makeElement("button", "timeline-select chronology__event");
     button.type = "button";
-    button.setAttribute("aria-label", "Inspect " + item.source + " record from " + item.date);
-    button.addEventListener("click", () => selectRecord(item.id, {compare: item.kind === "revision", focus:true}));
-    li.append(time, button, makeElement("p", "", item.timeline));
+    button.dataset.timelineRecord = record.id;
+    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-label", "Preview " + record.source + ": " + record.short);
+    const time = makeElement("time", "chronology__event-date", record.date);
+    time.dateTime = record.dateISO;
+    button.append(
+      time,
+      makeElement("span", "chronology__event-kind", record.badge),
+      makeElement("strong", "chronology__event-title", record.short),
+      makeElement("span", "chronology__event-id", record.id)
+    );
+    button.addEventListener("click", () => chooseTimelineRecord(record.id));
+    li.append(button);
     node.append(li);
   }
+  renderTimelineInspector();
 }
+
+$("#timeline-prev").addEventListener("click", () => stepTimeline(-1));
+$("#timeline-next").addEventListener("click", () => stepTimeline(1));
+$("#timeline-open").addEventListener("click", () => {
+  const record = RECORDS.find((item) => item.id === state.timelineSelected);
+  if (record) selectRecord(record.id, {compare: record.kind === "revision", focus:true});
+});
 
 // Claim selection only changes local labels and actions; no network or browser state.
 $$("[data-claim]").forEach((button) => {
@@ -362,8 +417,10 @@ $("#reset-workbench").addEventListener("click", () => {
   state.selected = RECORDS[0].id;
   state.claim = CLAIMS[0].id;
   state.lineageSelected = RECORDS[0].id;
+  state.timelineSelected = RECORDS[0].id;
   renderClaim();
   renderLineageInspector();
+  renderTimelineInspector();
   $$("[data-filter]").forEach((button) => {
     const active = button.dataset.filter === "all";
     button.classList.toggle("is-active", active);

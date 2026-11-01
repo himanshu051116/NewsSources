@@ -41,7 +41,7 @@ npx playwright install chromium
 npm test
 ~~~
 
-The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, passage drilldowns, revision highlighting, keyboard tabs, navigation and the absence of remote requests.
+The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, timeline selection and stepping, passage drilldowns, revision highlighting, keyboard navigation and the absence of remote requests.
 
 The GitHub Pages workflow runs the same test suite on pull requests and main; deployment to Pages now depends on successful validation **and** browser smoke tests. The tests are development dependencies only and are not included in the published `showcase/` artifact because the Pages upload step must exclude the `tests/` directory.
 
@@ -56,7 +56,7 @@ The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
 
 The workflow prepares a static deployment of the site. The site does not call the backend, crawlers, databases, live publisher feeds or private services. Browser-test sources live under `showcase/tests/` and are not website features.
 
-### Exhibit v0.4
+### Exhibit v0.5
 - Four **invented** records (one original notice, two derived reports, one revision)
 - A case briefing strip with visible original/derived/revision indicators
 - A fourth workbench tab: claim audit, with three labeled synthetic claims, editorial follow-up questions and source jumps
@@ -64,7 +64,8 @@ The workflow prepares a static deployment of the site. The site does not call th
 - A structured lineage explorer with four selectable source nodes and an evidence inspector
 - Explicit links from one notice to two derived reports and a later same-issuer revision
 - Dedicated source-inspector action to open the selected passage (or compare the revision)
-- Clickable timeline entries
+- An interactive four-capture chronology with a selection rail, event inspector, source lineage, editorial notes, and earlier/later navigation
+- Explicit **Inspect passage** / **Compare correction** actions that open the existing article review without duplicating its evidence
 - Safe side-by-side comparison with the fictional 240 → 215 revision highlighted
 - A visible explanation of what source provenance can and cannot prove
 - Keyboard-operated tabs, responsive layouts, local assets and a restrictive site CSP
@@ -75,15 +76,16 @@ Suggested smoke test:
 1. Choose **Claim audit** and switch through all three claim cards; the evidence values and editorial question must update.
 2. Use **Compare revision** from CLM-02; Article review should open SRC-004 with 240 and 215 highlighted.
 3. Filter records to **Derived**, then use the guided source tour and **Reset demo**; neither should throw JavaScript errors.
-4. Use arrow keys/Home/End between tabs and check all four views at mobile width.
-5. Confirm that opening the site makes no network calls to publisher or backend APIs.
+4. In **Timeline**, click each of the four fictional captures, use Earlier/Later, and open the final correction to verify the side-by-side 240 → 215 comparison.
+5. Use arrow keys/Home/End between tabs, then press Enter on a timeline capture and check all four views at mobile width.
+6. Confirm that opening the site makes no network calls to publisher or backend APIs.
 
 
 ## Maintenance
 
 - index.html: editorial copy and semantic layout
 - styles.css: responsive visual system and reduced-motion styles
-- app.js: fully local fictional records, claim audit, source inspector and guided interactions
+- app.js: fully local fictional records, claim audit, lineage and timeline inspectors, and guided interactions
 - tests/: browser regression suite and Playwright configuration (not part of the public-facing UI)
 - favicon.svg: local vector brand mark
 - .github/scripts/validate_showcase.py: basic link, privacy and structure checks
@@ -93,3 +95,7 @@ When documenting a new runtime feature, verify it against the implementation rat
 ## Rights
 
 The application declares a proprietary license in pyproject.toml; publishing this static showcase does not change the repository's licensing or grant third-party reuse rights.
+
+## Upgrade branch sequence
+
+Pages v0.5 builds upon the v0.4 lineage and browser-test work. The new timeline reuses the four synthetic source records and requires no backend, publisher permissions, secrets or browser storage. Review the underlying v0.4 changes before considering the dependent v0.5 work for deployment.
