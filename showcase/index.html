@@ -124,7 +124,7 @@
         <div class="workbench" aria-label="Interactive fictional news research workbench">
           <div class="workbench__topbar">
             <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
-            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.5</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.6</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
           </div>
           <div class="case-briefing" aria-label="Fictional case briefing">
             <div class="case-briefing__main">
@@ -156,7 +156,8 @@
                 <button type="button" class="bench-tab is-current" id="tab-analysis" role="tab" aria-controls="panel-analysis" aria-selected="true" tabindex="0" data-view="analysis">Article review</button>
                 <button type="button" class="bench-tab" id="tab-lineage" role="tab" aria-controls="panel-lineage" aria-selected="false" tabindex="-1" data-view="lineage">Source lineage</button>
                 <button type="button" class="bench-tab" id="tab-timeline" role="tab" aria-controls="panel-timeline" aria-selected="false" tabindex="-1" data-view="timeline">Timeline</button>
-                <button type="button" class="bench-tab" id="tab-audit" role="tab" aria-controls="panel-audit" aria-selected="false" tabindex="-1" data-view="audit">Claim audit <span class="bench-tab__new">NEW</span></button>
+                <button type="button" class="bench-tab" id="tab-audit" role="tab" aria-controls="panel-audit" aria-selected="false" tabindex="-1" data-view="audit">Claim audit</button>
+                <button type="button" class="bench-tab" id="tab-coverage" role="tab" aria-controls="panel-coverage" aria-selected="false" tabindex="-1" data-view="coverage">Compare coverage <span class="bench-tab__new">NEW</span></button>
               </div>
               <div id="panel-analysis" class="bench-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-analysis">
                 <div class="analysis__eyebrow"><span id="detail-kind">CORRECTION / REVIEW</span><span id="detail-date">—</span></div>
@@ -231,6 +232,53 @@
                   </div>
                 </div>
                 <p class="subview__foot">The register illustrates source history and attribution, not real-world truth. A changed number does not prove implementation; repeated headlines are not independent witnesses.</p>
+              </div>
+              <div id="panel-coverage" class="bench-panel bench-panel--coverage" role="tabpanel" tabindex="0" aria-labelledby="tab-coverage" hidden>
+                <div class="coverage-heading">
+                  <div><span class="small-label">COVERAGE LAB / SYNTHETIC RECORDS</span><h3>Four captures. <em>One originating notice.</em></h3><p>Compare two records to see where their wording agrees, where a figure changed, and why repeating one original document is not independent corroboration.</p></div>
+                  <div class="coverage-case-chip"><span>CASE / 024</span><strong>Attribution ≠ verification</strong></div>
+                </div>
+                <div class="coverage-controls" role="group" aria-label="Select two fictional source records for comparison">
+                  <label for="coverage-left"><span>01 / BASELINE RECORD</span><select id="coverage-left">
+                    <option value="SRC-001">SRC-001 · Original public notice</option>
+                    <option value="SRC-002">SRC-002 · Metro Desk report</option>
+                    <option value="SRC-003">SRC-003 · Regional Wire report</option>
+                    <option value="SRC-004">SRC-004 · Revised notice</option>
+                  </select></label>
+                  <button id="coverage-swap" type="button" aria-label="Swap baseline and comparison records"><span aria-hidden="true">⇄</span> Swap</button>
+                  <label for="coverage-right"><span>02 / COMPARISON RECORD</span><select id="coverage-right">
+                    <option value="SRC-001">SRC-001 · Original public notice</option>
+                    <option value="SRC-002" selected>SRC-002 · Metro Desk report</option>
+                    <option value="SRC-003">SRC-003 · Regional Wire report</option>
+                    <option value="SRC-004">SRC-004 · Revised notice</option>
+                  </select></label>
+                </div>
+                <div class="coverage-columns">
+                  <section class="coverage-document" aria-label="Baseline capture">
+                    <div class="coverage-document__top"><span>BASELINE CAPTURE</span><strong id="coverage-left-id">SRC-001</strong></div>
+                    <span class="coverage-document__kind" id="coverage-left-kind">ORIGINAL / PUBLIC NOTICE</span>
+                    <h4 id="coverage-left-title">Original public notice</h4>
+                    <p class="coverage-document__source" id="coverage-left-source">Civic Notices Office</p>
+                    <div class="coverage-document__quote"><span>FICTIONAL EXCERPT</span><blockquote id="coverage-left-excerpt"></blockquote></div>
+                    <div class="coverage-document__origin"><span>RECORDED LINEAGE</span><strong id="coverage-left-lineage">Primary document</strong></div>
+                    <button id="coverage-open-left" class="coverage-open" type="button">Inspect baseline ↗</button>
+                  </section>
+                  <section class="coverage-document coverage-document--alternate" aria-label="Comparison capture">
+                    <div class="coverage-document__top"><span>COMPARISON CAPTURE</span><strong id="coverage-right-id">SRC-002</strong></div>
+                    <span class="coverage-document__kind" id="coverage-right-kind">FOLLOW-UP / DERIVED REPORT</span>
+                    <h4 id="coverage-right-title">Metro Desk report</h4>
+                    <p class="coverage-document__source" id="coverage-right-source">Metro Desk</p>
+                    <div class="coverage-document__quote"><span>FICTIONAL EXCERPT</span><blockquote id="coverage-right-excerpt"></blockquote></div>
+                    <div class="coverage-document__origin"><span>RECORDED LINEAGE</span><strong id="coverage-right-lineage">Derived from SRC-001</strong></div>
+                    <button id="coverage-open-right" class="coverage-open" type="button">Inspect comparison ↗</button>
+                  </section>
+                </div>
+                <section class="coverage-finding" aria-label="Relationship interpretation" role="status" aria-live="polite">
+                  <div class="coverage-finding__mark" aria-hidden="true">⌁</div>
+                  <div><span>EDITORIAL RELATIONSHIP · NOT A TRUTH VERDICT</span><h4 id="coverage-relationship">Shared originating notice</h4><p id="coverage-interpretation">The second fictional report cites the first notice. It does not independently establish the draft figures.</p></div>
+                  <span class="coverage-finding__chip" id="coverage-class">SHARED ORIGIN</span>
+                </section>
+                <p class="subview__foot">All four records are invented. This comparison shows recorded attribution and revision differences; it does not calculate truthfulness, make live requests, or establish real-world independence.</p>
               </div>
             </div>
           </div>
