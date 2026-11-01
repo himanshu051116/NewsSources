@@ -5,7 +5,8 @@ This folder is a **separate, static portfolio presentation** for the NewsSources
 ## What visitors can do
 
 - Inspect the project's collection, versioning, source-lineage and analysis workflow.
-- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, switch between article review, lineage and timeline views.
+- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, and switch between article review, lineage, timeline and claim audit views.
+- Inspect an editorial claim register to distinguish unchanged figures, superseded figures and shared source origins, then jump to the relevant captures.
 - Follow links back to the actual source repository and the implemented-architecture guide.
 
 **Every demo article, publisher, date and quoted figure is invented.** The fake records deliberately share one evidence source to explain why multiple headlines are not automatically independent confirmation. No personal data or production credentials are used or transmitted. There are no third-party scripts, web fonts, tracking tags or remote API calls.
@@ -40,15 +41,24 @@ The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
 
 The workflow publishes only the `showcase/` directory; there is no backend, crawler, database, live publisher feed or secret in the Pages artifact.
 
-### Exhibit v0.2
+### Exhibit v0.3
 - Four **invented** records (one original notice, two derived reports, one revision)
+- A case briefing strip with visible original/derived/revision indicators
+- A fourth workbench tab: claim audit, with three labeled synthetic claims, editorial follow-up questions and source jumps
 - A guided three-step case tour and dedicated derived-report filter
 - Selectable source-lineage nodes and clickable timeline entries
 - Safe side-by-side comparison with the fictional 240 → 215 revision highlighted
 - A visible explanation of what source provenance can and cannot prove
 - Keyboard-operated tabs, responsive layouts, local assets and a restrictive site CSP
 
-Browser QA should cover keyboard navigation, mobile widths, filtering, source selection, the revision comparison and the reset control.
+Browser QA should cover keyboard navigation, mobile widths, filtering, source selection, claim selection, source-tracing actions, the revision comparison and the reset control. The offline validator checks the new tab and claim controls in addition to link safety and non-network behavior; it does **not** replace a browser interaction test.
+
+Suggested smoke test:
+1. Choose **Claim audit** and switch through all three claim cards; the evidence values and editorial question must update.
+2. Use **Compare revision** from CLM-02; Article review should open SRC-004 with 240 and 215 highlighted.
+3. Filter records to **Derived**, then use the guided source tour and **Reset demo**; neither should throw JavaScript errors.
+4. Use arrow keys/Home/End between tabs and check all four views at mobile width.
+5. Confirm that opening the site makes no network calls to publisher or backend APIs.
 
 
 ## Maintenance

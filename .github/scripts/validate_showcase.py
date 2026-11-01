@@ -46,7 +46,7 @@ def check() -> None:
     p = SiteParser()
     p.feed(html)
     assert p.heading_count == 1, "Expected exactly one page-level h1"
-    assert len(p.tabs) == len(p.panels) == 3, "Three workbench tabs required"
+    assert len(p.tabs) == len(p.panels) == 4, "Four workbench tabs required"
     assert "main" in p.ids and "record-list" in p.ids
     for tab in p.tabs:
         assert tab["aria-controls"] in p.ids
@@ -62,6 +62,10 @@ def check() -> None:
     assert len(re.findall(r'data-select-record="SRC-\d{3}"', html)) == 4
     assert 'id="reset-workbench"' in html
     assert 'id="comparison-panel"' in html
+    assert 'id="tab-audit"' in html and 'id="panel-audit"' in html
+    assert 'id="audit-original"' in html and 'id="audit-related"' in html
+    assert len(re.findall(r'data-claim="CLM-\d{2}"', html)) == 3, "Three selectable audit claims required"
+    assert 'case-briefing' in html, "Case briefing should be visible to all visitors"
     assert 'id="limits"' in html
     assert "COPYRIGHT" not in html.upper(), "Don't invent project licensing"
     for tag, link in p.links:
@@ -76,6 +80,10 @@ def check() -> None:
             assert (SITE / link).is_file(), f"Missing local asset {tag}: {link}"
     assert re.search(r"const RECORDS = Object\.freeze\(\[", js)
     assert js.count('id: "SRC-') == 4, "Demo should contain four fictional records"
+    assert js.count('id: "CLM-') == 3, "Demo claim register should contain three claims"
+    for feature in ("renderClaim", "audit-original", "audit-related", "audit-status",
+                    "data-claim", '"audit"', 'CLAIMS.find'):
+        assert feature in js, f"Missing claim audit behavior: {feature}"
     assert '"240"' in js and '"215"' in js, "Known fictional revision must be highlighted"
     for feature in ("data-select-record", "data-jump", "timeline-select", "selectRecord",
                     "reset-workbench", "renderMarkedExcerpt"):
@@ -88,6 +96,10 @@ def check() -> None:
     assert js.count(selector_all) == 2, (
         "Both record-selection listeners and selection-state updates must iterate all controls"
     )
+    filter_all = '$$' + '("[data-filter]").forEach'
+    filter_one = '$' + '("[data-filter]").forEach'
+    assert js.count(filter_all) == 4, "All four filter operations must use collection selectors"
+    assert filter_one not in js.replace(filter_all, ''), "Singular filter selection breaks reset"
     assert "innerHTML" not in js, "Do not inject user-controlled HTML"
     assert 'document.createElement' in js and '.textContent' in js, "Use safe DOM updates"
     assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|localStorage)\s*\(", js), (
@@ -96,7 +108,7 @@ def check() -> None:
     assert "@media(max-width:520px)" in css
     assert "prefers-reduced-motion" in css
     assert not re.search(r"https?://", css), "Styles should not load remote assets"
-    print("PASS: local assets, navigation, tabs, lineage/timeline controls, source comparison, privacy and responsive design")
+    print("PASS: assets, four tabs, claim audit, comparison, record selectors, privacy and responsive design")
 
 
 if __name__ == "__main__":

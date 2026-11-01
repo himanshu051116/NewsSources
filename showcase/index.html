@@ -124,7 +124,19 @@
         <div class="workbench" aria-label="Interactive fictional news research workbench">
           <div class="workbench__topbar">
             <div class="workbench__identity"><span class="workbench__identity-icon" aria-hidden="true">◉</span> NEWS / RESEARCH DESK <span class="workbench__slash">/</span> CASE 024</div>
-            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.2</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+            <div class="workbench__status"><span class="status-ring" aria-hidden="true"></span> DEMO DATASET <span class="workbench__version">v 0.3</span><button type="button" class="reset-workbench" id="reset-workbench">Reset demo ↺</button></div>
+          </div>
+          <div class="case-briefing" aria-label="Fictional case briefing">
+            <div class="case-briefing__main">
+              <span class="case-briefing__eyebrow">CASE FILE 024 <span aria-hidden="true">/</span> TRANSIT CORRIDOR</span>
+              <strong>A correction travels farther when its source remains visible.</strong>
+              <p>Four invented records. One originating notice. A changed allocation—and an evidence trail worth keeping.</p>
+            </div>
+            <div class="case-briefing__signals" aria-label="Case evidence summary">
+              <div><span>01</span><small>PRIMARY ORIGIN</small></div>
+              <div><span>02</span><small>DERIVED REPORTS</small></div>
+              <div><span>240 → 215</span><small>REVISED UNITS</small></div>
+            </div>
           </div>
           <div class="workbench__body">
             <aside class="workbench__sidebar" aria-label="Fictional source records">
@@ -144,6 +156,7 @@
                 <button type="button" class="bench-tab is-current" id="tab-analysis" role="tab" aria-controls="panel-analysis" aria-selected="true" tabindex="0" data-view="analysis">Article review</button>
                 <button type="button" class="bench-tab" id="tab-lineage" role="tab" aria-controls="panel-lineage" aria-selected="false" tabindex="-1" data-view="lineage">Source lineage</button>
                 <button type="button" class="bench-tab" id="tab-timeline" role="tab" aria-controls="panel-timeline" aria-selected="false" tabindex="-1" data-view="timeline">Timeline</button>
+                <button type="button" class="bench-tab" id="tab-audit" role="tab" aria-controls="panel-audit" aria-selected="false" tabindex="-1" data-view="audit">Claim audit <span class="bench-tab__new">NEW</span></button>
               </div>
               <div id="panel-analysis" class="bench-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-analysis">
                 <div class="analysis__eyebrow"><span id="detail-kind">CORRECTION / REVIEW</span><span id="detail-date">—</span></div>
@@ -172,9 +185,28 @@
                 <ol class="demo-timeline" id="demo-timeline"></ol>
                 <p class="subview__foot">Select a timeline event to inspect its associated source. Dates, publishers and claims here are invented.</p>
               </div>
+              <div id="panel-audit" class="bench-panel bench-panel--audit" role="tabpanel" tabindex="0" aria-labelledby="tab-audit" hidden>
+                <div class="audit-intro"><span class="small-label">CLAIM REGISTER / SYNTHETIC CASE</span><h3>Separate the claim from its evidence.</h3><p>Choose a statement to inspect its earlier wording, latest recorded wording and remaining editorial questions. These are invented records, not automated factual verdicts.</p></div>
+                <div class="audit-grid">
+                  <div class="audit-index" role="group" aria-label="Select a fictional claim">
+                    <button class="audit-claim is-current" type="button" data-claim="CLM-01" aria-pressed="true"><span>CLM / 01</span><strong>Corridor distance</strong><small>Draft length · 18 km</small></button>
+                    <button class="audit-claim" type="button" data-claim="CLM-02" aria-pressed="false"><span>CLM / 02</span><strong>Budget allocation</strong><small>Revised · 240 → 215</small></button>
+                    <button class="audit-claim" type="button" data-claim="CLM-03" aria-pressed="false"><span>CLM / 03</span><strong>Source independence</strong><small>Shared original notice</small></button>
+                  </div>
+                  <div class="audit-detail">
+                    <div class="audit-detail__head"><span>SELECTED CLAIM</span><span class="audit-state" id="audit-status">UNCHANGED IN SOURCE</span></div>
+                    <h4 id="audit-title">Proposed corridor length</h4>
+                    <div class="audit-values"><div><span>EARLIER CAPTURE</span><strong id="audit-before">18 kilometres</strong></div><div><span>LATER CAPTURE</span><strong id="audit-after">18 kilometres</strong></div></div>
+                    <p class="audit-summary" id="audit-summary">Both notices describe an 18-kilometre draft; this alone does not establish the final route.</p>
+                    <div class="audit-review"><span>OPEN EDITORIAL QUESTION</span><p id="audit-review">How can the proposed route be independently verified?</p></div>
+                    <div class="audit-actions"><button type="button" id="audit-original">Inspect original notice ↗</button><button type="button" id="audit-related">Inspect related capture ↗</button></div>
+                  </div>
+                </div>
+                <p class="subview__foot">The register illustrates source history and attribution, not real-world truth. A changed number does not prove implementation; repeated headlines are not independent witnesses.</p>
+              </div>
             </div>
           </div>
-          <div class="workbench__bottom"><span>INTERACTION: filter · select lineage nodes · inspect timeline · compare revisions</span><span>NOT A LIVE FACT-CHECKER</span></div>
+          <div class="workbench__bottom"><span>INTERACTION: search · trace sources · inspect claims · compare revisions</span><span>NOT A LIVE FACT-CHECKER</span></div>
         </div>
         <div class="demo-after"><span class="asterisk">✳</span><p><strong>What this preview is—and isn't.</strong> The interface is a self-contained illustration of NewsSources research concepts. It does not connect to publisher feeds, the database, or the running FastAPI service. The underlying project remains a separate Python application.</p></div>
       </div>
