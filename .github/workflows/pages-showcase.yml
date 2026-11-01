@@ -80,10 +80,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+      - name: Prepare a public-only site bundle
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/newssources-pages"
+          for file in index.html app.js styles.css favicon.svg .nojekyll; do
+            cp "showcase/$file" "$RUNNER_TEMP/newssources-pages/$file"
+          done
       - name: Upload only public static files
         uses: actions/upload-pages-artifact@v4
         with:
-          path: showcase
+          path: ${{ runner.temp }}/newssources-pages
       - name: Deploy static site
         id: deployment
         uses: actions/deploy-pages@v4
