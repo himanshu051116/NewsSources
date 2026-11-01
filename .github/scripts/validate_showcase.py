@@ -64,7 +64,7 @@ def check() -> None:
     assert 'id="comparison-panel"' in html
     assert 'id="tab-audit"' in html and 'id="panel-audit"' in html
     assert 'id="audit-original"' in html and 'id="audit-related"' in html
-    assert len(re.findall(r'data-claim="CLM-\\d{2}"', html)) == 3, "Three selectable audit claims required"
+    assert len(re.findall(r'data-claim="CLM-\d{2}"', html)) == 3, "Three selectable audit claims required"
     assert 'case-briefing' in html, "Case briefing should be visible to all visitors"
     assert 'id="limits"' in html
     assert "COPYRIGHT" not in html.upper(), "Don't invent project licensing"
