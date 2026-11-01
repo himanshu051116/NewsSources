@@ -5,8 +5,9 @@ This folder is a **separate, static portfolio presentation** for the NewsSources
 ## What visitors can do
 
 - Inspect the project's collection, versioning, source-lineage and analysis workflow.
-- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, and switch between article review, lineage, timeline, claim audit and coverage comparison views.
+- Use a fictional research workbench: search four invented source records, filter revisions, compare passages, and switch between article review, lineage, timeline, claim audit, coverage comparison and reviewer desk views.
 - Inspect an editorial claim register to distinguish unchanged figures, superseded figures and shared source origins, then jump to the relevant captures.
+- Open a **session-only reviewer desk** for three fictional claims: record follow-up notes, choose a non-verdict workflow status, inspect related passages, and switch to the source lineage.
 - Follow links back to the actual source repository and the implemented-architecture guide.
 
 **Every demo article, publisher, date and quoted figure is invented.** The fake records deliberately share one evidence source to explain why multiple headlines are not automatically independent confirmation. No personal data or production credentials are used or transmitted. There are no third-party scripts, web fonts, tracking tags or remote API calls.
@@ -41,7 +42,7 @@ npx playwright install chromium
 npm test
 ~~~
 
-The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, timeline selection and stepping, coverage comparison (shared origin, revisions, duplicate selection, swapping), passage drilldowns, revision highlighting, keyboard navigation and the absence of remote requests.
+The test configuration starts and stops the local server automatically. It tests desktop Chromium and a narrow/mobile Chromium viewport, including boot errors, search/filter/reset, claim audit, source relationships, timeline selection and stepping, coverage comparison (shared origin, revisions, duplicate selection, swapping), local reviewer notes and status flags, audit handoff, note clearing and reload, passage drilldowns, revision highlighting, keyboard navigation and the absence of remote requests.
 
 The GitHub Pages workflow runs the same test suite on pull requests and main; deployment to Pages now depends on successful validation **and** browser smoke tests. The tests are development dependencies only and are not included in the published `showcase/` artifact because the Pages upload step must exclude the `tests/` directory.
 
@@ -56,7 +57,7 @@ The workflow is [pages-showcase.yml](../.github/workflows/pages-showcase.yml).
 
 The workflow prepares a static deployment of the site. The site does not call the backend, crawlers, databases, live publisher feeds or private services. Browser-test sources live under `showcase/tests/` and are not website features.
 
-### Exhibit v0.6
+### Exhibit v0.7
 - Four **invented** records (one original notice, two derived reports, one revision)
 - A case briefing strip with visible original/derived/revision indicators
 - A fourth workbench tab: claim audit, with three labeled synthetic claims, editorial follow-up questions and source jumps
@@ -64,6 +65,10 @@ The workflow prepares a static deployment of the site. The site does not call th
 - A structured lineage explorer with four selectable source nodes and an evidence inspector
 - Explicit links from one notice to two derived reports and a later same-issuer revision
 - Dedicated source-inspector action to open the selected passage (or compare the revision)
+- A responsive reviewer desk with three claim cards, outstanding editorial questions, source trace actions, and uncertainty indicators
+- Session-only working notes and non-verdict statuses (not assessed, follow-up required, needs editorial review). Notes are held only in JavaScript memory; they are cleared by reset, refresh or page close, and are never transmitted or saved
+- Reviewer note counts and follow-up counts; a strict 600-character limit and a per-claim Clear note action
+- An audit-to-review handoff that retains the selected claim
 - A comparison workspace for any two of the four invented source captures, with safe side-by-side passages
 - Attribution-aware explanations for one original notice, two derived reports, a revision, and duplicate selection
 - Explicit highlighting of the fictional 240 → 215 change, without presenting repetition as independent corroboration
@@ -82,8 +87,9 @@ Suggested smoke test:
 3. Filter records to **Derived**, then use the guided source tour and **Reset demo**; neither should throw JavaScript errors.
 4. In **Compare coverage**, compare both derived reports to confirm their shared source; select SRC-004 to see the 240 → 215 revision, swap the records, and compare a record with itself.
 5. In **Timeline**, click each of the four fictional captures, use Earlier/Later, and open the final correction to verify the side-by-side 240 → 215 comparison.
-6. Use arrow keys/Home/End between tabs, then press Enter on a timeline capture and check all five views at mobile width.
-7. Confirm that opening the site makes no network calls to publisher or backend APIs.
+6. In **Review desk**, draft notes for different fictional claims, flag follow-up, open original and related sources, reset the demo, and refresh the page to confirm notes do not persist.
+7. Use arrow keys/Home/End between tabs, then press Enter on a timeline capture and check all six views at mobile width.
+8. Confirm that opening the site makes no network calls to publisher or backend APIs.
 
 
 ## Maintenance
@@ -103,4 +109,4 @@ The application declares a proprietary license in pyproject.toml; publishing thi
 
 ## Upgrade branch sequence
 
-Pages v0.6 builds on the v0.5 timeline and v0.4 lineage/browser checks. All comparison interpretations use only the four invented records and explicitly do not infer independent evidence or factual truth. No publisher permissions, credentials, secrets, browser storage or backend are needed. Review and merge v0.4, then v0.5, then v0.6; the branches are sequential.
+Pages v0.7 builds on v0.6 coverage comparisons, v0.5 timeline, and v0.4 lineage/browser tests. No backend, publisher data, saved credentials, persistent browser storage, network transmission, or factual verdict feature is added. Review and merge the dependent PRs in order: v0.4 → v0.5 → v0.6 → v0.7. The note editor is a disposable interaction demonstration, not a production case-management application.
