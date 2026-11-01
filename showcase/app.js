@@ -364,7 +364,7 @@ function renderCoverage() {
     label = "SAME RECORD";
   } else if (includesRevision) {
     heading = "A revised figure; the same originating source";
-    explanation = "The fictional issuing office changed its draft allocation from 240 to 215 units. Earlier reports may retain the old number. The revision does not independently verify the underlying proposal.";
+    explanation = "The fictional issuing office changed the draft allocation from 240 to 215 units. Both captures trace to the same originating notice; older reports may still cite 240. This change does not independently verify the proposal.";
     label = "REVISION";
   } else if (left.kind === "derived" && right.kind === "derived") {
     heading = "Two reports; one originating document";
