@@ -96,7 +96,7 @@ def check() -> None:
     assert js.count(lineage_all) == 2, "Inspector and node listeners must use collection selectors"
     claim_all = '$$' + '("[data-claim]").forEach'
     assert js.count(claim_all) == 2, "Audit card listeners and rendering must use collection selectors"
-    assert not re.search(r'(?<!\\$)\\$\\([^)]*\\)\\.forEach\\(', js), (
+    assert not re.search(r'(?<![$])[$][(][^)]*[)][.]forEach[(]', js), (
         "querySelector returns one element; forEach requires querySelectorAll"
     )
     filter_all = '$$' + '("[data-filter]").forEach'
